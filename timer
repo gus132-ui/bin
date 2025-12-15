@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+# timer DURATION [MESSAGE...]
+# examples: timer 25m "Pomodoro done" | timer 90s "Break over"
+
+set -euo pipefail
+
+dur="${1:-}"
+shift || true
+msg="${*:-Time is up}"
+
+if [ -z "$dur" ]; then
+  echo "usage: timer 25m \"Pomodoro done\"   |   timer 90s \"Break over\""
+  exit 1
+fi
+
+# Parse duration: Ns or Nm (only)
+case "$dur" in
+  *m) total=$(( ${dur%m} * 60 ));;
+  *s) total=$(( ${dur%s} ));;
+  *)  echo "Bad duration: $dur (use e.g. 25m or 90s)"; exit 1;;
+esac
+
+# Terminal helpers
+cols=$(tput cols 2>/dev/null || echo 80)
+barw=$(( cols - 22 ))
+[ "$barw" -lt 10 ] && barw=10
+
+hide_cursor() { tput civis 2>/dev/null || true; }
+show_cursor() { tput cnorm 2>/dev/null || true; }
+cleanup() { show_cursor; printf "\n"; }
+trap cleanup EXIT INT TERM
+
+hide_cursor
+
+# ANSI colors (no external deps)
+YELLOW=$'\033[33m'
+GREEN=$'\033[32m'
+DIM=$'\033[2m'
+RESET=$'\033[0m'
+
+secs="$total"
+start_msg="${msg}"
+
+while [ "$secs" -gt 0 ]; do
+  mm=$(( secs / 60 ))
+  ss=$(( secs % 60 ))
+
+  done=$(( total - secs ))
+  pct=$(( done * 100 / total ))
+
+  fill=$(( barw * done / total ))
+  empty=$(( barw - fill ))
+
+  # Build progress bar
+  bar="$(printf "%${fill}s" "" | tr ' ' '=')"
+  pad="$(printf "%${empty}s" "")"
+
+  printf "\r${YELLOW}T-%02d:%02d${RESET} ${DIM}[${bar}>${pad}]${RESET} %3d%%  " \
+    "$mm" "$ss" "$pct"
+
+  sleep 1
+  secs=$(( secs - 1 ))
+done
+
+printf "\r${GREEN}DONE 00:00 100%%\n"
+notify-send "Timer" "$start_msg"
+paplay /usr/share/sounds/freedesktop/stereo/complete.oga >/dev/null 2>&1 || true
+
