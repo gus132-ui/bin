@@ -1,0 +1,214 @@
+#!/bin/bash
+
+# Scriptum ad preces e Divinum Officium extrahendas
+# Auctor: Adam Kasprzak
+# Data: 2026-01-13
+
+set -o pipefail
+
+if [ $# -eq 0 ]; then
+  echo "Usus: $0 [laudes|prima|tertia|sexta|nona|vesperae]"
+  exit 1
+fi
+
+HORA_INPUT="$1"
+HORA="$(echo "${HORA_INPUT:0:1}" | tr '[:lower:]' '[:upper:]')$(echo "${HORA_INPUT:1}" | tr '[:upper:]' '[:lower:]')"
+
+case "$HORA" in
+  Laudes|Prima|Tertia|Sexta|Nona|Vesperae) ;;
+  *)
+    echo "Error: Argumentum invalidum: '$HORA_INPUT'"
+    echo "Valida: laudes, prima, tertia, sexta, nona, vesperae"
+    exit 1
+    ;;
+esac
+
+BASE_URL="https://www.divinumofficium.com/cgi-bin/horas/officium.pl"
+URL="${BASE_URL}?command=pray${HORA}"
+
+USE_COLOR=1
+if [ ! -t 1 ] || [ "${NO_COLOR:-0}" = "1" ]; then
+  USE_COLOR=0
+fi
+
+WRAP="${WRAP:-80}"  # word-wrap width (no justify)
+
+echo
+echo
+echo "        ?8888P"
+echo "         \`88'"
+echo "    8b,_  88  _,d8"
+echo "    88888SEAL88888"
+echo "    8P~   88   ~?8"
+echo "         ,88."
+echo "        d8888b"
+
+echo "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
+echo "Hora: $HORA"
+echo "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
+echo
+
+HTML="$(curl -s "$URL")"
+if [ $? -ne 0 ] || [ -z "$HTML" ]; then
+  echo "Error: Pagina recipi non potuit (curl error vel responsum vacuum)."
+  exit 1
+fi
+
+echo "$HTML" | awk '
+  /<FONT SIZE=.+1. COLOR="red"><B><I>Incipit<\/I><\/B><\/FONT>/ { printing=1 }
+  printing {
+    if (/<TD VALIGN=.TOP. WIDTH=.50%.><DIV ALIGN=.right.><FONT SIZE=.1. COLOR=.green.>[0-9]+/) in_english=1
+    if (/<\/TR>/) { in_english=0; print "" }
+    if (!in_english) print
+  }
+  /<\/TABLE>/ && printing { exit }
+' | \
+  sed 's/<[^>]*>//g' | \
+  sed -E 's/^[0-9]+:[0-9]+[[:space:]]*//' | \
+  sed 's/&nbsp;/ /g' | \
+  sed 's/&ensp;/ /g' | \
+  sed 's/&lt;/</g' | \
+  sed 's/&gt;/>/g' | \
+  sed 's/&amp;/\&/g' | \
+  sed 's/&#[0-9]*;//g' | \
+  # remove parentheses ranges after Psalm number: Psalmus 54(17-24) -> Psalmus 54
+  sed -E 's/^(Psalmus[[:space:]]+[0-9]+)\([^)]*\)/\1/' | \
+  cat -s | \
+  grep -v "^Top" | \
+  grep -v "^Next" | \
+  grep -v "^[0-9]$" | \
+  # blank lines between antiphon and psalm title; and before closing antiphon after V/. R/.
+  awk '
+    function is_ant(s)   { return (s ~ /^Ant\./) }
+    function is_psalm(s) { return (s ~ /^Psalmus[[:space:]]+[0-9]+/) }
+    function is_vr(s)    { return (s ~ /^[VR]\.\//) }
+
+    {
+      cur = $0
+      if (is_psalm(cur) && is_ant(prev) && prev != "") {
+        print prev
+        print ""
+        print cur
+        prev=""
+        next
+      }
+      if (is_ant(cur) && is_vr(prev) && prev != "") {
+        print prev
+        print ""
+        print cur
+        prev=""
+        next
+      }
+      if (prev != "") print prev
+      prev = cur
+    }
+    END { if (prev != "") print prev }
+  ' | \
+  # word-wrap (no justify), preserve indentation
+  awk -v wrap="$WRAP" '
+    function ltrim(s){ sub(/^[[:space:]]+/, "", s); return s }
+    function rtrim(s){ sub(/[[:space:]]+$/, "", s); return s }
+    function trim(s){ return rtrim(ltrim(s)) }
+
+    function wrap_line(indent, text, limit,   n,i,words,line,tmp){
+      text = trim(text)
+      if (text == "") { print ""; return }
+      gsub(/[[:space:]]+/, " ", text)
+
+      n = split(text, words, " ")
+      line = ""
+      for (i=1; i<=n; i++){
+        tmp = (line == "" ? words[i] : line " " words[i])
+        if (length(tmp) <= limit) {
+          line = tmp
+        } else {
+          print indent line
+          line = words[i]
+        }
+      }
+      if (line != "") print indent line
+    }
+
+    {
+      raw = $0
+      if (raw ~ /^[[:space:]]*$/) { print ""; next }
+
+      # keep existing indentation
+      indent = ""
+      match(raw, /^[[:space:]]*/)
+      indent = substr(raw, RSTART, RLENGTH)
+      text = substr(raw, RLENGTH+1)
+
+      # wrap only if needed
+      if (length(raw) > wrap) {
+        lim = wrap - length(indent)
+        if (lim < 20) lim = 20
+        wrap_line(indent, text, lim)
+      } else {
+        print raw
+      }
+    }
+  ' | \
+  # pretty print (colors + indentation unchanged; grey for [] and {})
+  awk -v use_color="$USE_COLOR" '
+    BEGIN{
+      reset="\033[0m"; bold="\033[1m"; dim="\033[2m"
+      red="\033[31m"; green="\033[32m"; yellow="\033[33m"
+      blue="\033[34m"; mag="\033[35m"; cyan="\033[36m"
+      gray="\033[90m"
+      if (!use_color) { reset=bold=dim=red=green=yellow=blue=mag=cyan=gray="" }
+    }
+
+    function trim(s){ gsub(/^[[:space:]]+|[[:space:]]+$/, "", s); return s }
+
+    function gray_blocks(s, cur, rep){
+      rep = gray "&" cur
+      gsub(/\[[^]]+\]/, rep, s)
+      gsub(/\{[^}]*\}/, rep, s)
+      return s
+    }
+
+    function blank_before_if_needed(t){
+      if (t ~ /^(Oremus\.?|Conclusio)$/ && prev_blank == 0) print ""
+    }
+
+    {
+      raw = $0
+
+      if (raw ~ /^[[:space:]]*$/) { print ""; prev_blank=1; next }
+
+      t = trim(raw)
+      blank_before_if_needed(t)
+      prev_blank=0
+
+      prefix=""
+
+      # headings in RED
+      if (t == "Incipit" || t == "Hymnus") {
+        prefix = bold red
+      } else if (t ~ /^Psalmus[[:space:]]+[0-9]+/) {
+        prefix = bold red
+      } else if (t ~ /^Psalmi[[:space:]]*\{/) {
+        prefix = dim gray
+      } else if (t == "Conclusio") {
+        prefix = bold red
+      } else if (t ~ /^Ant\./) {
+        prefix = mag
+      } else if (t ~ /^[VR]\.\//) {
+        prefix = green
+      } else if (t ~ /^Gl(ó|o)ria Patri,/) {
+        prefix = blue
+      } else if (t ~ /^Sicut erat/) {
+        prefix = blue
+      }
+
+      line = gray_blocks(raw, prefix)
+      print prefix line reset
+    }
+  '
+
+echo
+echo "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
+echo "Finis Horae: $HORA"
+echo "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-"
+

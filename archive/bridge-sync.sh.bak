@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CERT_FILE="$HOME/.config/isync/proton-bridge.pem"
+
+echo "[1] Restart Bridge"
+systemctl --user restart protonmail-bridge.service
+
+echo "[2] Wait for Bridge IMAP port"
+for i in {1..30}; do
+  ss -ltn '( sport = :1143 )' | grep -q 1143 && break
+  sleep 1
+done
+
+ss -ltn '( sport = :1143 )' | grep -q 1143 || {
+  echo "Bridge did not start"; exit 1; }
+
+echo "[3] Refresh cert"
+systemctl --user start proton-bridge-cert-refresh.service
+
+echo "[4] Wait for cert"
+for i in {1..10}; do
+  [ -s "$CERT_FILE" ] && break
+  sleep 1
+done
+
+[ -s "$CERT_FILE" ] || { echo "Cert not created"; exit 1; }
+
+echo "[5] Run mbsync"
+mbsync -a -V
+

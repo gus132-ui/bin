@@ -1,0 +1,3 @@
+[submodule "lib/bashsimplecurses"]
+	path = lib/bashsimplecurses
+	url = https://github.com/metal3d/bashsimplecurses

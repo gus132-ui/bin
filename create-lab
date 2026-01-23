@@ -1,0 +1,206 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+URI="qemu:///system"
+
+IMGROOT="/var/lib/libvirt/images"
+BASEDIR="$IMGROOT/base"
+LABDIR="$IMGROOT/lab"
+
+# Template domains (XML donors)
+TEMPLATE_DOMAIN_DEBIAN="debian13-template"
+TEMPLATE_DOMAIN_NIXOS="nixos-template"
+
+# Base qcow2 images (backing files)
+TEMPLATE_BASE_DEBIAN="$BASEDIR/debian13-template.qcow2"
+TEMPLATE_BASE_NIXOS="$BASEDIR/nixos-base.qcow2"
+
+usage() {
+  cat <<'EOF'
+Usage: kvm-lab-create <lab-name> [--base template|work01|nixos|/abs/path.qcow2] [--start]
+
+Examples:
+  kvm-lab-create lab10 --base template --start
+  kvm-lab-create lab11 --base work01 --start
+  kvm-lab-create lab20 --base nixos --start
+  kvm-lab-create lab12 --base /var/lib/libvirt/images/base/custom.qcow2 --start
+EOF
+}
+
+# --- Parse args ---
+NAME="${1:-}"
+shift || true
+
+BASESEL="template"
+START="no"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --base)
+      BASESEL="${2:-}"
+      shift 2
+      ;;
+    --start)
+      START="yes"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "ERROR: Unknown argument: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
+
+if [[ -z "${NAME:-}" ]]; then
+  usage
+  exit 1
+fi
+
+DISK="${LABDIR}/${NAME}.qcow2"
+XML_TMP="$(mktemp "/tmp/${NAME}.xml.XXXXXX")"
+cleanup() { rm -f "$XML_TMP"; }
+trap cleanup EXIT
+
+# --- Resolve base selection (qcow2 backing file) ---
+resolve_base() {
+  local sel="$1"
+
+  if [[ "$sel" == "template" ]]; then
+    echo "$TEMPLATE_BASE_DEBIAN"
+    return 0
+  fi
+
+  if [[ "$sel" == "nixos" ]]; then
+    echo "$TEMPLATE_BASE_NIXOS"
+    return 0
+  fi
+
+  if [[ "$sel" == "work01" ]]; then
+    # Pick newest promoted work01 base (must exist first)
+    local latest
+    latest="$(ls -1t "$BASEDIR"/work01-base-*.qcow2 2>/dev/null | head -n 1 || true)"
+    if [[ -z "$latest" ]]; then
+      echo "ERROR: No work01 base found in $BASEDIR (expected work01-base-*.qcow2)."
+      echo "Action: run your promote script to create one."
+      return 1
+    fi
+    echo "$latest"
+    return 0
+  fi
+
+  # Absolute path base
+  if [[ "$sel" == /* ]]; then
+    echo "$sel"
+    return 0
+  fi
+
+  echo "ERROR: Invalid --base '$sel' (use template|work01|nixos|/abs/path.qcow2)"
+  return 1
+}
+
+# --- Select template domain (XML donor) based on base selection ---
+resolve_template_domain() {
+  local sel="$1"
+
+  if [[ "$sel" == "nixos" ]]; then
+    echo "$TEMPLATE_DOMAIN_NIXOS"
+    return 0
+  fi
+
+  # If user gave an absolute qcow2, we default to Debian template unless they explicitly chose nixos.
+  # (You can change this policy later by adding a separate --os flag.)
+  echo "$TEMPLATE_DOMAIN_DEBIAN"
+  return 0
+}
+
+BASE="$(resolve_base "$BASESEL")"
+TEMPLATE_DOMAIN="$(resolve_template_domain "$BASESEL")"
+
+# --- Preconditions (read-only checks) ---
+if [[ ! -d "$LABDIR" ]]; then
+  echo "ERROR: Lab directory missing: $LABDIR"
+  exit 1
+fi
+
+if ! sudo test -r "$BASE"; then
+  echo "ERROR: Base image not readable (via sudo): $BASE"
+  exit 1
+fi
+
+if [[ -e "$DISK" ]]; then
+  echo "ERROR: Disk already exists: $DISK"
+  exit 1
+fi
+
+if virsh -c "$URI" dominfo "$NAME" &>/dev/null; then
+  echo "ERROR: Domain already exists: $NAME"
+  exit 1
+fi
+
+if ! virsh -c "$URI" dominfo "$TEMPLATE_DOMAIN" &>/dev/null; then
+  echo "ERROR: Template domain not found in $URI: $TEMPLATE_DOMAIN"
+  echo "Action:"
+  if [[ "$TEMPLATE_DOMAIN" == "$TEMPLATE_DOMAIN_NIXOS" ]]; then
+    echo "  - Define a nixos-template domain (UEFI/OVMF) and keep it powered off."
+  else
+    echo "  - Ensure debian13-template exists."
+  fi
+  exit 1
+fi
+
+# --- Create overlay disk ---
+echo "Using template domain: $TEMPLATE_DOMAIN"
+echo "Using base: $BASE"
+echo "Creating overlay disk: $DISK"
+sudo qemu-img create -f qcow2 -F qcow2 -b "$BASE" "$DISK" >/dev/null
+sudo chown libvirt-qemu:libvirt "$DISK"
+sudo chmod 0660 "$DISK"
+
+echo "Validating backing file..."
+sudo qemu-img info "$DISK" | grep -E "file format:|virtual size:|backing file:" || true
+
+# --- Clone domain XML ---
+echo "Cloning domain XML from: $TEMPLATE_DOMAIN"
+virsh -c "$URI" dumpxml "$TEMPLATE_DOMAIN" > "$XML_TMP"
+
+# Detect original disk path inside the template XML and replace it robustly
+ORIG_DISK_PATH="$(grep -oP "(?<=<source file=')[^']+" "$XML_TMP" | head -n 1 || true)"
+if [[ -z "$ORIG_DISK_PATH" ]]; then
+  echo "ERROR: Could not find <source file='...'> disk path in template XML ($TEMPLATE_DOMAIN)."
+  echo "Action: ensure the template VM uses a file-backed qcow2 disk."
+  exit 1
+fi
+
+# Set name, disk path, and force NAT-only network "default"
+sed -i \
+  -e "s|<name>${TEMPLATE_DOMAIN}</name>|<name>${NAME}</name>|" \
+  -e "s|${ORIG_DISK_PATH}|${DISK}|g" \
+  -e "s|<source network='[^']*'|<source network='default'|g" \
+  "$XML_TMP"
+
+# Remove UUID to avoid collision with template
+sed -i -E '/<uuid>[^<]*<\/uuid>/d' "$XML_TMP"
+
+# Remove any host filesystem passthrough (if present)
+perl -0777 -i -pe 's/<filesystem[\s\S]*?<\/filesystem>\n?//g' "$XML_TMP"
+
+# --- Define domain ---
+echo "Defining domain: $NAME"
+virsh -c "$URI" define "$XML_TMP" >/dev/null
+
+# --- Optional start ---
+if [[ "$START" == "yes" ]]; then
+  echo "Starting domain: $NAME"
+  virsh -c "$URI" start "$NAME" >/dev/null
+fi
+
+echo "OK: Lab '$NAME' created (disk: $DISK)."
+if [[ "$START" != "yes" ]]; then
+  echo "To start: virsh -c $URI start $NAME"
+fi
+

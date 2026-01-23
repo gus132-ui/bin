@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+NAME="${1:-}"
+usage() { echo "Usage: vm-rm <name>" >&2; exit 2; }
+[[ -n "$NAME" ]] || usage
+
+case "$NAME" in
+  debian13-template|work01|Whonix-Gateway|Whonix-Workstation)
+    echo "Refusing: protected VM name '$NAME'." >&2
+    exit 1
+    ;;
+esac
+
+if ! sudo virsh dominfo "$NAME" >/dev/null 2>&1; then
+  echo "VM not found in libvirt: $NAME" >&2
+  exit 1
+fi
+
+# Find associated disk(s) from XML, delete only qcow2 under overlays/
+mapfile -t DISKS < <(sudo virsh domblklist "$NAME" --details \
+  | awk '$3=="disk" && $4 ~ /^\// {print $4}')
+
+echo "Will remove VM: $NAME"
+for d in "${DISKS[@]}"; do
+  echo "Disk: $d"
+done
+
+sudo virsh destroy "$NAME" >/dev/null 2>&1 || true
+sudo virsh undefine "$NAME" --nvram >/dev/null 2>&1 || sudo virsh undefine "$NAME" >/dev/null
+
+for d in "${DISKS[@]}"; do
+  case "$d" in
+    /var/lib/libvirt/images/overlays/*.qcow2)
+      sudo rm -f -- "$d"
+      ;;
+    *)
+      echo "Skipping non-overlay disk: $d" >&2
+      ;;
+  esac
+done
+
+echo "Removed: $NAME"
+

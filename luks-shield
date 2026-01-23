@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+UUID="6659e638-d52a-4c32-9781-9dcedd44db35"
+NAME="shield"
+MNT="/mnt/shield"
+
+DEV_BY_UUID="/dev/disk/by-uuid/${UUID}"
+MAPPER="/dev/mapper/${NAME}"
+
+die() { echo "Error: $*" >&2; exit 1; }
+
+need_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die "Missing command: $1"
+}
+
+resolve_blockdev() {
+  # Resolve the UUID symlink to an absolute /dev/... node
+  local target
+  target="$(readlink -f "$DEV_BY_UUID")" || return 1
+  [[ -b "$target" ]] || return 1
+  echo "$target"
+}
+
+is_mapped() {
+  [[ -e "$MAPPER" ]]
+}
+
+is_mounted() {
+  mountpoint -q "$MNT"
+}
+
+show_busy() {
+  echo "Mount appears busy. Processes using $MNT:"
+  # lsof is optional but useful; show what we can.
+  if command -v lsof >/dev/null 2>&1; then
+    sudo lsof +f -- "$MNT" || true
+  else
+    echo "(Install lsof: sudo apt install lsof)"
+    sudo fuser -vm "$MNT" || true
+  fi
+}
+
+do_open() {
+  need_cmd cryptsetup
+  need_cmd mount
+  need_cmd mountpoint
+  need_cmd readlink
+
+  [[ -e "$DEV_BY_UUID" ]] || die "UUID device not found: $DEV_BY_UUID (is the drive plugged in?)"
+
+  local dev
+  dev="$(resolve_blockdev)" || die "Could not resolve block device for UUID: $UUID"
+
+  if is_mapped; then
+    echo "Mapper already exists: $MAPPER"
+  else
+    sudo cryptsetup open "$dev" "$NAME"
+  fi
+
+  if [[ ! -d "$MNT" ]]; then
+    sudo mkdir -p "$MNT"
+  fi
+
+  if is_mounted; then
+    echo "Already mounted: $MNT"
+  else
+    sudo mount "$MAPPER" "$MNT"
+  fi
+
+  sudo sync
+  echo "OK: unlocked and mounted at $MNT"
+}
+
+do_close() {
+  need_cmd cryptsetup
+  need_cmd umount
+  need_cmd mountpoint
+  need_cmd readlink
+
+  if is_mounted; then
+    sudo sync
+    if ! sudo umount "$MNT"; then
+      show_busy
+      die "Unmount failed"
+    fi
+  fi
+
+  if is_mapped; then
+    sudo cryptsetup close "$NAME"
+  fi
+
+  # Best-effort power-off
+  if [[ -e "$DEV_BY_UUID" ]]; then
+    local dev
+    dev="$(resolve_blockdev)" || true
+    if [[ -n "${dev:-}" ]]; then
+      if command -v udisksctl >/dev/null 2>&1; then
+        sudo udisksctl power-off -b "$dev" || true
+      fi
+    fi
+  fi
+
+  echo "OK: unmounted, closed, and powered off (if supported)"
+}
+
+do_status() {
+  echo "UUID device: $DEV_BY_UUID"
+  if [[ -e "$DEV_BY_UUID" ]]; then
+    echo "Resolved:   $(readlink -f "$DEV_BY_UUID")"
+  else
+    echo "Resolved:   (not present)"
+  fi
+
+  echo -n "Mapper:     "
+  if is_mapped; then echo "OPEN ($MAPPER)"; else echo "CLOSED"; fi
+
+  echo -n "Mount:      "
+  if is_mounted; then echo "MOUNTED ($MNT)"; else echo "NOT MOUNTED"; fi
+}
+
+usage() {
+  cat <<EOF
+Usage: $0 {open|close|status}
+
+open   - unlock LUKS by UUID and mount to $MNT
+close  - sync, unmount, close mapper, power-off block device (best-effort)
+status - show current state
+EOF
+}
+
+main() {
+  case "${1:-}" in
+    open)   do_open ;;
+    close)  do_close ;;
+    status) do_status ;;
+    *) usage; exit 2 ;;
+  esac
+}
+
+main "$@"
+

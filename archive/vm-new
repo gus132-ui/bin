@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+NAME="${1:-}"
+RAM="${2:-4096}"      # MiB
+VCPUS="${3:-2}"
+
+BASE="/var/lib/libvirt/images/base/work01-base.qcow2"
+DIR="/var/lib/libvirt/images/overlays"
+DISK="${DIR}/${NAME}.qcow2"
+
+usage() {
+  echo "Usage: vm-new <name> [ramMiB=4096] [vcpus=2]" >&2
+  exit 2
+}
+
+[[ -n "$NAME" ]] || usage
+
+case "$NAME" in
+  debian13-template|work01|Whonix-Gateway|Whonix-Workstation)
+    echo "Refusing: protected VM name '$NAME'." >&2
+    exit 1
+    ;;
+esac
+
+if sudo virsh dominfo "$NAME" >/dev/null 2>&1; then
+  echo "Refusing: VM '$NAME' already exists in libvirt." >&2
+  exit 1
+fi
+
+if [[ ! -f "$BASE" ]]; then
+  echo "Base image not found: $BASE" >&2
+  exit 1
+fi
+
+if [[ -e "$DISK" ]]; then
+  echo "Refusing: disk already exists: $DISK" >&2
+  exit 1
+fi
+
+# Create overlay
+sudo qemu-img create -f qcow2 -F qcow2 -b "$BASE" "$DISK" >/dev/null
+
+# Define + install (import existing disk)
+sudo virt-install --connect qemu:///system \
+  --name "$NAME" \
+  --memory "$RAM" --vcpus "$VCPUS" --cpu host-model \
+  --disk "path=$DISK,format=qcow2,bus=virtio" \
+  --network network=default,model=virtio \
+  --graphics none \
+  --import \
+  --osinfo linux2024 \
+  --noautoconsole
+
+echo "Created: $NAME"
+echo "Disk:    $DISK"
+echo "Next:    sudo virsh start $NAME && sudo virsh domifaddr $NAME"
+

@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+URI="qemu:///system"
+IMGROOT="/var/lib/libvirt/images"
+BASEDIR="$IMGROOT/base"
+SNAPROOT="$HOME/.backup/kvm-labs"
+
+usage() {
+  echo "Usage: kvm-promote-to-base <vm-name> [--disk vda]"
+  echo "Creates: $BASEDIR/<vm-name>-base-YYYY-MM-DD_HHMMSS.qcow2"
+  exit 1
+}
+
+VM="${1:-}"
+DISKTGT="vda"
+
+shift || true
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --disk)
+      DISKTGT="${2:-}"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      echo "ERROR: Unknown arg: $1"
+      usage
+      ;;
+  esac
+done
+
+if [[ -z "$VM" ]]; then
+  usage
+fi
+
+if [[ ! -d "$BASEDIR" ]]; then
+  echo "ERROR: Base directory missing: $BASEDIR"
+  exit 1
+fi
+
+state="$(virsh -c "$URI" domstate "$VM" 2>/dev/null | tr -d '\r' || true)"
+if [[ "$state" != "shut off" ]]; then
+  echo "ERROR: VM must be shut off for consistent promotion."
+  echo "VM: $VM"
+  echo "State: ${state:-unknown}"
+  exit 1
+fi
+
+DISK="$(virsh -c "$URI" domblklist "$VM" --details | awk -v t="$DISKTGT" '$3==t{print $4}')"
+if [[ -z "$DISK" || ! -f "$DISK" ]]; then
+  echo "ERROR: Cannot locate disk for $VM target=$DISKTGT"
+  echo "Detected: '$DISK'"
+  exit 1
+fi
+
+TS="$(date +%F_%H%M%S)"
+SNAPDIR="$SNAPROOT/${TS}-promote-${VM}"
+NEWBASE="$BASEDIR/${VM}-base-${TS}.qcow2"
+
+mkdir -p "$SNAPDIR"
+
+# Snapshot metadata (read-only)
+virsh -c "$URI" dumpxml "$VM" > "$SNAPDIR/${VM}.xml"
+sudo qemu-img info --backing-chain "$DISK" > "$SNAPDIR/${VM}.${DISKTGT}.backing-chain.txt" || true
+sudo ls -l "$DISK" > "$SNAPDIR/${VM}.${DISKTGT}.ls.txt" || true
+
+echo "Creating base image:"
+echo "  VM:     $VM"
+echo "  Disk:   $DISK (target: $DISKTGT)"
+echo "  Target: $NEWBASE"
+
+sudo qemu-img convert -O qcow2 "$DISK" "$NEWBASE"
+sudo chown libvirt-qemu:libvirt "$NEWBASE"
+sudo chmod 0660 "$NEWBASE"
+
+echo "Verifying new base has no backing file..."
+if sudo qemu-img info "$NEWBASE" | grep -q '^backing file:'; then
+  echo "ERROR: New base unexpectedly has a backing file. Aborting."
+  exit 1
+fi
+
+echo "SUCCESS: $NEWBASE"
+echo "Snapshot: $SNAPDIR"
+

@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CERT_FILE="${HOME}/.config/isync/proton-bridge.pem"
+
+BRIDGE_UNIT="protonmail-bridge.service"
+IMAP_PORT="1143"
+
+# These paths match what your ps output shows.
+BRIDGE_CHILD_PATH="/usr/lib/protonmail/bridge/bridge"
+BRIDGE_LAUNCHER_PATH="/usr/bin/protonmail-bridge"
+
+CERT_REFRESH_UNIT="proton-bridge-cert-refresh.service"
+
+port_listening() {
+  ss -ltn "( sport = :${IMAP_PORT} )" | grep -q ":${IMAP_PORT}"
+}
+
+echo "[0] Preconditions"
+command -v ss >/dev/null
+command -v mbsync >/dev/null
+command -v systemctl >/dev/null
+
+echo "[1] Stop Bridge (systemd user service)"
+systemctl --user stop "${BRIDGE_UNIT}" || true
+
+echo "[1.1] Kill any remaining processes in unit cgroup"
+# If stop didn't fully terminate, this forces remaining processes in the unit's cgroup to die.
+systemctl --user kill -s SIGKILL "${BRIDGE_UNIT}" || true
+
+echo "[1.2] Hard kill Bridge child (the one that tends to linger)"
+pkill -u "${USER}" -f "${BRIDGE_CHILD_PATH}" || true
+
+echo "[1.3] Optional: kill launcher if it lingers"
+pkill -u "${USER}" -f "${BRIDGE_LAUNCHER_PATH}" || true
+
+echo "[1.4] Wait until IMAP port ${IMAP_PORT} is closed"
+for i in {1..15}; do
+  port_listening || break
+  sleep 1
+done
+
+if port_listening; then
+  echo "ERROR: Port ${IMAP_PORT} still open after stop/kill."
+  echo "Diagnostics:"
+  ss -ltnp | grep ":${IMAP_PORT}" || true
+  ps -u "${USER}" -o pid,comm,args | grep -E 'protonmail|/usr/lib/protonmail/bridge/bridge' | grep -v grep || true
+  exit 1
+fi
+
+echo "[2] Start Bridge"
+systemctl --user start "${BRIDGE_UNIT}"
+
+echo "[2.1] Wait for Bridge IMAP port ${IMAP_PORT}"
+for i in {1..30}; do
+  port_listening && break
+  sleep 1
+done
+
+if ! port_listening; then
+  echo "ERROR: Bridge did not start (port ${IMAP_PORT} not listening)."
+  echo "Diagnostics:"
+  systemctl --user status "${BRIDGE_UNIT}" --no-pager || true
+  journalctl --user -u "${BRIDGE_UNIT}" -n 80 --no-pager || true
+  exit 1
+fi
+
+echo "[3] Refresh cert"
+systemctl --user start "${CERT_REFRESH_UNIT}"
+
+echo "[3.1] Wait for cert: ${CERT_FILE}"
+for i in {1..10}; do
+  [ -s "${CERT_FILE}" ] && break
+  sleep 1
+done
+
+if [ ! -s "${CERT_FILE}" ]; then
+  echo "ERROR: Cert not created at ${CERT_FILE}"
+  echo "Diagnostics:"
+  systemctl --user status "${CERT_REFRESH_UNIT}" --no-pager || true
+  journalctl --user -u "${CERT_REFRESH_UNIT}" -n 80 --no-pager || true
+  ls -la "$(dirname "${CERT_FILE}")" || true
+  exit 1
+fi
+
+echo "[4] Run mbsync"
+mbsync -a -V
+

@@ -1,0 +1,24 @@
+#!/bin/sh
+set -eu
+
+: "${PASSWORD_STORE_DIR:=$HOME/.password-store}"
+DMENU="${DMENU:-dmenu}"
+
+# Build list of pass entry paths (relative to PASSWORD_STORE_DIR) that contain an otpauth:// line.
+entries=$(
+  find "$PASSWORD_STORE_DIR" -type f -name '*.gpg' ! -path '*/.git/*' -print 2>/dev/null |
+  while IFS= read -r f; do
+    entry="${f#$PASSWORD_STORE_DIR/}"
+    entry="${entry%.gpg}"
+    if pass show "$entry" 2>/dev/null | grep -q '^otpauth://'; then
+      printf '%s\n' "$entry"
+    fi
+  done
+)
+
+[ -n "${entries:-}" ] || exit 0
+
+choice=$(printf '%s\n' "$entries" | "$DMENU" -i -p "OTP:")
+[ -n "${choice:-}" ] || exit 0
+
+pass otp -c "$choice"

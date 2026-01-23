@@ -1,7 +1,7 @@
 #!/bin/sh
 
 while true; do
-    datetime="$(date '+%a %m-%d %H:%M')"
+    datetime="$(date '+%d %a %H:%M')"
 
     # Volume
     if command -v pamixer >/dev/null 2>&1; then

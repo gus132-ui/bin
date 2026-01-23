@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BASE="/mnt/sharepoint"
+
+declare -A REMOTES=(
+  ["Administration"]="SP_Administration:"
+  ["Operations"]="SP_Operations:"
+  ["SkyscaleCommerce"]="SP_SkyscaleCommerce:"
+)
+
+RCLONE_FLAGS=(
+  --vfs-cache-mode writes
+  --dir-cache-time 1h
+  --poll-interval 1m
+  --umask 022
+  --log-level INFO
+)
+
+is_mounted() { findmnt -rn "$1" >/dev/null 2>&1; }
+
+# Ensure mountpoints exist
+sudo mkdir -p "$BASE"/{Administration,Operations,SkyscaleCommerce}
+sudo chown -R "$USER:$USER" "$BASE"
+
+for name in "${!REMOTES[@]}"; do
+  mp="$BASE/$name"
+  remote="${REMOTES[$name]}"
+
+  if is_mounted "$mp"; then
+    echo "Already mounted: $mp"
+    continue
+  fi
+
+  echo "Mounting: $remote -> $mp"
+  nohup rclone mount "$remote" "$mp" "${RCLONE_FLAGS[@]}" \
+    --log-file "${XDG_RUNTIME_DIR:-/run/user/$UID}/rclone-${name}.log" \
+    >/dev/null 2>&1 &
+done
+

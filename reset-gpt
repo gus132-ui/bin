@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Close ChatGPT tabs only
+pkill -f "firefox.*chatgpt.com" 2>/dev/null
+
+PROFILE=$(ls -d ~/.mozilla/firefox/*.default*)
+
+# Delete all ChatGPT site storage
+rm -rf "$PROFILE/storage/default/https+++chatgpt.com"
+rm -rf "$PROFILE/storage/default/https+++chat.openai.com"
+
+# Clear Firefox HTTP cache
+rm -rf "$PROFILE/cache2/*"
+
+# Relaunch Firefox
+nohup firefox-esr >/dev/null 2>&1 &
+

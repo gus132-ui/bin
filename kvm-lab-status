@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+URI="qemu:///system"
+IMGROOT="/var/lib/libvirt/images"
+BASEDIR="$IMGROOT/base"
+LABDIR="$IMGROOT/lab"
+
+hr() { printf '%*s\n' "${COLUMNS:-80}" '' | tr ' ' '-'; }
+
+echo "KVM LAB STATUS"
+hr
+echo "Time: $(date -Is)"
+echo "Host: $(hostname)"
+echo
+
+echo "Libvirt domains ($URI):"
+hr
+virsh -c "$URI" list --all || true
+echo
+
+echo "Lab VMs (names starting with 'lab'):"
+hr
+virsh -c "$URI" list --all | awk 'NR==1||NR==2{print;next} $2 ~ /^lab/ {print}' || true
+echo
+
+echo "Lab disk inventory ($LABDIR):"
+hr
+if [[ -d "$LABDIR" ]]; then
+  sudo ls -lh --time-style=long-iso "$LABDIR" 2>/dev/null || ls -lh "$LABDIR"
+else
+  echo "Missing: $LABDIR"
+fi
+echo
+
+echo "Base images ($BASEDIR):"
+hr
+if [[ -d "$BASEDIR" ]]; then
+  ls -lh --time-style=long-iso "$BASEDIR" 2>/dev/null || ls -lh "$BASEDIR"
+else
+  echo "Missing: $BASEDIR"
+fi
+echo
+
+echo "Selected base candidates:"
+hr
+TEMPLATE="$BASEDIR/debian13-template.qcow2"
+LATEST_WORK01="$(ls -1t "$BASEDIR"/work01-base-*.qcow2 2>/dev/null | head -n 1 || true)"
+
+if [[ -f "$TEMPLATE" ]]; then
+  echo "template: $TEMPLATE"
+else
+  echo "template: MISSING ($TEMPLATE)"
+fi
+
+if [[ -n "$LATEST_WORK01" ]]; then
+  echo "work01 (latest): $LATEST_WORK01"
+else
+  echo "work01 (latest): none found ($BASEDIR/work01-base-*.qcow2)"
+fi
+echo
+
+echo "Libvirt networks:"
+hr
+virsh -c "$URI" net-list --all || true
+echo
+

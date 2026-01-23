@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CERT_DIR="$HOME/.config/isync"
+CERT_FILE="$CERT_DIR/proton-bridge.pem"
+
+mkdir -p "$CERT_DIR"
+chmod 700 "$CERT_DIR"
+
+# Ensure Bridge port is up (wait up to 30s)
+for i in $(seq 1 30); do
+  if ss -ltn '( sport = :1143 )' | grep -q 1143; then
+    break
+  fi
+  sleep 1
+done
+
+if ! ss -ltn '( sport = :1143 )' | grep -q 1143; then
+  echo "Bridge not listening on 127.0.0.1:1143" >&2
+  exit 1
+fi
+
+tmp="$(mktemp)"
+
+openssl s_client -starttls imap -connect 127.0.0.1:1143 -showcerts </dev/null 2>/dev/null \
+| awk '
+  /BEGIN CERTIFICATE/ {c++}
+  c==1 {print}
+  /END CERTIFICATE/ && c==1 {exit}
+' > "$tmp"
+
+# sanity check
+openssl x509 -in "$tmp" -noout >/dev/null 2>&1
+
+mv "$tmp" "$CERT_FILE"
+chmod 600 "$CERT_FILE"
+
+echo "Updated: $CERT_FILE"
+

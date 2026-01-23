@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BASE="/mnt/sharepoint"
+MPS=(
+  "$BASE/Administration"
+  "$BASE/Operations"
+  "$BASE/SkyscaleCommerce"
+)
+
+is_mounted() { findmnt -rn "$1" >/dev/null 2>&1; }
+
+# Do not stay inside any mount
+cd /
+
+for mp in "${MPS[@]}"; do
+  if ! is_mounted "$mp"; then
+    echo "Not mounted: $mp"
+    continue
+  fi
+
+  echo "Unmounting: $mp"
+  if ! fusermount3 -u "$mp" 2>/dev/null; then
+    fusermount3 -uz "$mp" 2>/dev/null || sudo umount -l "$mp" 2>/dev/null || {
+      echo "ERROR: failed to unmount $mp"
+      exit 1
+    }
+  fi
+done
+
+# Optional: kill any leftover rclone mount processes still referencing /mnt/sharepoint
+pkill -f "rclone mount.*${BASE}" 2>/dev/null || true
+

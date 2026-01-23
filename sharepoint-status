@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BASE="/mnt/sharepoint"
+MPS=(
+  "$BASE/Administration"
+  "$BASE/Operations"
+  "$BASE/SkyscaleCommerce"
+)
+
+for mp in "${MPS[@]}"; do
+  if findmnt -rn "$mp" >/dev/null 2>&1; then
+    echo "MOUNTED  $mp"
+  else
+    echo "OFF      $mp"
+  fi
+done
+

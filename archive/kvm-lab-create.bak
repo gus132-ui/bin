@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Libvirt context (system)
+URI="qemu:///system"
+
+# Base/template (immutable parent qcow2)
+BASE="/var/lib/libvirt/images/base/debian13-template.qcow2"
+TEMPLATE_DOMAIN="debian13-template"
+
+# Lab overlays directory (dedicated)
+LABDIR="/var/lib/libvirt/images/lab"
+
+usage() {
+  echo "Usage: kvm-lab-create <lab-name> [--start]"
+  echo "Example: kvm-lab-create lab02 --start"
+}
+
+NAME="${1:-}"
+START="${2:-}"
+
+if [[ -z "$NAME" ]]; then
+  usage
+  exit 1
+fi
+
+if [[ "${START:-}" != "" && "${START:-}" != "--start" ]]; then
+  usage
+  exit 1
+fi
+
+DISK="${LABDIR}/${NAME}.qcow2"
+XML_TMP="$(mktemp "/tmp/${NAME}.xml.XXXXXX")"
+
+cleanup() { rm -f "$XML_TMP"; }
+trap cleanup EXIT
+
+# ---- Preconditions (read-only checks) ----
+if ! sudo test -r "$BASE"; then
+  echo "ERROR: Base image not readable: $BASE"
+  exit 1
+fi
+
+if [[ ! -d "$LABDIR" ]]; then
+  echo "ERROR: Lab directory missing: $LABDIR"
+  exit 1
+fi
+
+if [[ -e "$DISK" ]]; then
+  echo "ERROR: Disk already exists: $DISK"
+  exit 1
+fi
+
+if virsh -c "$URI" dominfo "$NAME" &>/dev/null; then
+  echo "ERROR: Domain already exists: $NAME"
+  exit 1
+fi
+
+if ! virsh -c "$URI" dominfo "$TEMPLATE_DOMAIN" &>/dev/null; then
+  echo "ERROR: Template domain not found in $URI: $TEMPLATE_DOMAIN"
+  exit 1
+fi
+
+# ---- Create overlay disk ----
+echo "Creating overlay disk: $DISK"
+sudo qemu-img create -f qcow2 -F qcow2 -b "$BASE" "$DISK" >/dev/null
+
+# Ensure qemu/libvirt can open it
+sudo chown libvirt-qemu:libvirt "$DISK"
+sudo chmod 0660 "$DISK"
+
+# Quick sanity: confirm backing file is correct
+echo "Validating backing file..."
+sudo qemu-img info "$DISK" | grep -E "backing file:|file format:|virtual size:" || true
+
+# ---- Clone domain XML ----
+echo "Cloning domain XML from: $TEMPLATE_DOMAIN"
+virsh -c "$URI" dumpxml "$TEMPLATE_DOMAIN" > "$XML_TMP"
+
+# Replace <name> and the disk path, and force NAT-only network "default"
+# Notes:
+# - disk path substitution assumes template points at /var/lib/libvirt/images/base/debian13-template.qcow2
+# - network replacement assumes a standard <interface type='network'> exists
+sed -i \
+  -e "s|<name>${TEMPLATE_DOMAIN}</name>|<name>${NAME}</name>|" \
+  -e "s|${BASE}|${DISK}|g" \
+  -e "s|<source network='[^']*'|<source network='default'|g" \
+  "$XML_TMP"
+
+# Extra safety: remove any hostfs passthrough (if any) to prevent host access via mounts
+# (If none exist, this does nothing.)
+perl -0777 -i -pe 's/<filesystem[\s\S]*?<\/filesystem>\n?//g' "$XML_TMP"
+#
+# Remove UUID to avoid collision with template
+sed -i -E '/<uuid>[^<]*<\/uuid>/d' "$XML_TMP"
+# ---- Define domain ----
+echo "Defining domain: $NAME"
+virsh -c "$URI" define "$XML_TMP" >/dev/null
+
+# ---- Optional start ----
+if [[ "$START" == "--start" ]]; then
+  echo "Starting domain: $NAME"
+  virsh -c "$URI" start "$NAME" >/dev/null
+fi
+
+echo "OK: Lab '${NAME}' created (disk: ${DISK})."
+if [[ "$START" != "--start" ]]; then
+  echo "To start: virsh -c $URI start ${NAME}"
+fi
+
