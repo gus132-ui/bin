@@ -2,51 +2,42 @@
 set -euo pipefail
 
 URI="qemu:///system"
-LABDIR="/var/lib/libvirt/images/lab"
+IMGROOT="/var/lib/libvirt/images"
+LABDIR="$IMGROOT/lab"
+
+usage() {
+  echo "Usage: kvm-lab-destroy <lab-name>"
+}
 
 NAME="${1:-}"
+[[ -n "$NAME" ]] || { usage; exit 1; }
 
-if [[ -z "$NAME" ]]; then
-  echo "Usage: kvm-lab-destroy <lab-name>"
-  exit 1
+DISK="${LABDIR}/${NAME}.qcow2"
+
+# Domain cleanup (best-effort)
+if virsh -c "$URI" dominfo "$NAME" &>/dev/null; then
+  state="$(virsh -c "$URI" domstate "$NAME" 2>/dev/null || true)"
+  if [[ "$state" == *running* ]]; then
+    virsh -c "$URI" shutdown "$NAME" >/dev/null 2>&1 || true
+    sleep 1
+    virsh -c "$URI" destroy "$NAME" >/dev/null 2>&1 || true
+  else
+    virsh -c "$URI" destroy "$NAME" >/dev/null 2>&1 || true
+  fi
+
+  virsh -c "$URI" undefine "$NAME" --nvram >/dev/null 2>&1 || \
+    virsh -c "$URI" undefine "$NAME" >/dev/null 2>&1 || true
+else
+  echo "WARN: Domain not found: $NAME"
 fi
 
-if [[ "$NAME" == "work01" || "$NAME" == "debian13-template" ]]; then
-  echo "Refusing to destroy protected VM: $NAME"
-  exit 1
+# Disk cleanup
+if [[ -e "$DISK" ]]; then
+  echo "Removing disk: $DISK"
+  sudo rm -f "$DISK"
+else
+  echo "WARN: Disk not found: $DISK"
 fi
 
-if ! virsh -c "$URI" dominfo "$NAME" &>/dev/null; then
-  echo "Domain not found: $NAME"
-  exit 1
-fi
-
-DISK="$(virsh -c "$URI" domblklist "$NAME" --details | awk '$3=="vda"{print $4}')"
-
-if [[ -z "$DISK" || "$DISK" != "$LABDIR/"* ]]; then
-  echo "Refusing to destroy: disk not under $LABDIR"
-  echo "Detected disk: $DISK"
-  exit 1
-fi
-
-STATE="$(virsh -c "$URI" domstate "$NAME")"
-
-if [[ "$STATE" == "running" ]]; then
-  echo "Shutting down $NAME..."
-  virsh -c "$URI" shutdown "$NAME"
-  sleep 3
-fi
-
-if [[ "$(virsh -c "$URI" domstate "$NAME")" == "running" ]]; then
-  echo "Force stopping $NAME..."
-  virsh -c "$URI" destroy "$NAME"
-fi
-
-echo "Undefining $NAME..."
-virsh -c "$URI" undefine "$NAME"
-
-echo "Deleting disk: $DISK"
-sudo rm -v -- "$DISK"
-
-echo "Lab '$NAME' destroyed."
+echo "OK: Destroyed lab '$NAME'."
 

@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BIB="${BIB:-/home/lukasz/thesis_main/05_thesis/bibliography.bib}"
+DMENU="${DMENU:-dmenu -i -l 20 -p Citekey}"
+CLIP="${CLIP:-xclip -selection clipboard}"
+
+if [[ ! -r "$BIB" ]]; then
+  printf "ERROR: cannot read %s\n" "$BIB" >&2
+  exit 1
+fi
+
+# Build menu lines: "type<TAB>citekey"
+choices="$(
+  rg -n '^\@(\w+)\{([^,]+),' "$BIB" \
+  | sed -E 's/^[0-9]+:\@(\w+)\{([^,]+),/\1\t\2/' \
+  | sort -u
+)"
+
+picked="$(printf "%s\n" "$choices" | eval "$DMENU" || true)"
+[[ -z "$picked" ]] && exit 0
+
+key="$(printf "%s" "$picked" | awk -F'\t' '{print $2}')"
+[[ -z "$key" ]] && exit 0
+
+printf "[@%s]" "$key" | eval "$CLIP"
+printf "Copied: [@%s]\n" "$key" >&2
+

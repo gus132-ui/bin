@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_path="${HOME}/.local/bin"
+
+# Optional dmenu theming
+# shellcheck disable=SC1090
+[[ -r "${HOME}/.local/bin/dmenu-theming" ]] && . "${HOME}/.local/bin/dmenu-theming"
+
+DMENU_CMD="${DMENU_CMD:-dmenu}"
+PROMPT="${PROMPT:-Run: }"
+
+# List only executable non-binary files in ~/.local/bin
+choices="$(
+  find "${script_path}" -maxdepth 1 -type f -executable -print0 \
+  | xargs -0 -I{} sh -c 'grep -Iq . "$1" && printf "%s\n" "$(basename "$1")"' _ {} \
+  | sort -u
+)"
+
+picked="$(
+  printf "%s\n" "$choices" \
+  | ${DMENU_CMD} -i -l 20 -p "${PROMPT}" ${lines:-} ${colors:-} ${font:-} \
+  || true
+)"
+
+[[ -n "${picked}" ]] || exit 0
+
+# Safety: only allow basenames (no slashes)
+case "$picked" in
+  */*|"") exit 0 ;;
+esac
+
+target="${script_path}/${picked}"
+
+[[ -x "$target" ]] || { printf "ERROR: not executable: %s\n" "$target" >&2; exit 1; }
+
+exec "$target"
+

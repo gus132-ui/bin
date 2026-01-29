@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+OUTFILE="${OUTFILE:-$HOME/.clips}"
+
+notify() {
+  # $1 = urgency (low|normal|critical)
+  # $2 = title
+  # $3 = body
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send -u "$1" "$2" "$3"
+  fi
+}
+
+die() {
+  notify critical "capture-clip" "$1"
+  printf -- "ERROR: %s\n" "$1" >&2
+  exit 1
+}
+
+get_clipboard() {
+  if command -v xclip >/dev/null 2>&1; then
+    xclip -o -selection clipboard 2>/dev/null || xclip -o -selection primary
+    return 0
+  fi
+  if command -v xsel >/dev/null 2>&1; then
+    xsel --clipboard --output 2>/dev/null || xsel --primary --output
+    return 0
+  fi
+  die "need xclip or xsel"
+}
+
+clip="$(get_clipboard)"
+
+[[ -n "$clip" ]] || die "clipboard is empty"
+
+ts="$(date '+%y:%m:%d %H:%M:%S')"
+
+{
+  printf -- "# caputred %s\n" "$ts"
+  printf -- "%s\n" "$clip"
+  printf -- "---\n"
+} >> "$OUTFILE"
+
+lines="$(printf "%s" "$clip" | wc -l | tr -d ' ')"
+chars="$(printf "%s" "$clip" | wc -c | tr -d ' ')"
+
+notify normal "capture-clip" "Saved to ~/.clips ($lines lines, $chars chars)"
+

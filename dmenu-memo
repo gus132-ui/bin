@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+OUTFILE="${OUTFILE:-$HOME/.notes}"
+DMENU="${DMENU:-dmenu}"
+PROMPT="${PROMPT:-Memo: }"
+
+# Optional dmenu theming
+# shellcheck disable=SC1090
+[[ -r "${HOME}/.local/bin/dmenu-theming" ]] && . "${HOME}/.local/bin/dmenu-theming"
+
+notify() {
+  # $1: urgency (low|normal|critical), $2: message
+  if command -v notify-send >/dev/null 2>&1; then
+    notify-send -u "$1" "dmenu-memo" "$2"
+  fi
+}
+
+die() {
+  notify critical "$1"
+  exit 1
+}
+
+# dmenu returns non-zero on ESC; treat as cancel
+note="$(
+  printf "" \
+  | ${DMENU} -p "$PROMPT" ${lines:-} ${colors:-} ${font:-} \
+  || true
+)"
+
+# Cancel / empty input: notify low, then exit quietly
+if [[ -z "${note}" ]]; then
+  notify low "Cancelled (empty memo)"
+  exit 0
+fi
+
+ts="$(date '+%y:%m:%d %H:%M:%S')"
+
+{
+  printf -- "# %s\n" "$ts"
+  printf -- "%s\n" "$note"
+  printf -- "---\n"
+} >> "$OUTFILE" || die "Failed to write to $OUTFILE"
+
+notify normal "Saved to ~/.notes"
+

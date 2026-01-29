@@ -1,0 +1,244 @@
+#!/usr/bin/env sh
+set -eu
+
+usage() {
+  cat <<'EOF'
+Usage:
+  fakeid <cc> [count]
+
+Examples:
+  fakeid pl
+  fakeid de 5
+  fakeid fr 2
+
+Supported cc -> Faker locale mapping:
+  pl -> pl_PL
+  de -> de_DE
+  fr -> fr_FR
+  en -> en_US
+  it -> it_IT
+  es -> es_ES
+  nl -> nl_NL
+  pt -> pt_PT
+  cz -> cs_CZ
+  sk -> sk_SK
+  se -> sv_SE
+  no -> nb_NO
+  dk -> da_DK
+EOF
+}
+
+cc="${1:-}"
+count="${2:-1}"
+
+[ -n "$cc" ] || { usage; exit 2; }
+
+case "$cc" in
+  pl) locale="pl_PL" ;;
+  de) locale="de_DE" ;;
+  fr) locale="fr_FR" ;;
+  en) locale="en_US" ;;
+  it) locale="it_IT" ;;
+  es) locale="es_ES" ;;
+  nl) locale="nl_NL" ;;
+  pt) locale="pt_PT" ;;
+  cz) locale="cs_CZ" ;;
+  sk) locale="sk_SK" ;;
+  se) locale="sv_SE" ;;
+  no) locale="nb_NO" ;;
+  dk) locale="da_DK" ;;
+  *)
+    echo "Unsupported country code: $cc" >&2
+    usage >&2
+    exit 2
+    ;;
+esac
+
+case "$count" in
+  ''|*[!0-9]*)
+    echo "Count must be a positive integer." >&2
+    exit 2
+    ;;
+esac
+[ "$count" -ge 1 ] || { echo "Count must be >= 1." >&2; exit 2; }
+
+have_iconv=0
+command -v iconv >/dev/null 2>&1 && have_iconv=1
+
+# Convert to an ASCII-ish gmail-safe slug.
+# - transliterate diacritics where possible
+# - lowercase
+# - allow only [a-z0-9.] (dots used as separators)
+# - collapse multiple dots
+# - trim leading/trailing dots
+slugify() {
+  s="$1"
+  if [ "$have_iconv" -eq 1 ]; then
+    s="$(printf "%s" "$s" | iconv -f UTF-8 -t ASCII//TRANSLIT 2>/dev/null || printf "%s" "$s")"
+  fi
+
+  # lowercase
+  s="$(printf "%s" "$s" | tr '[:upper:]' '[:lower:]')"
+
+  # normalize common separators to dot (no tr ranges involved)
+  s="$(printf "%s" "$s" | sed "s/[[:space:]_'’\"-]\+/\./g")"
+
+  # keep only a-z0-9 and dots
+  s="$(printf "%s" "$s" | tr -cd 'a-z0-9.')"
+
+  # collapse repeated dots + trim leading/trailing dots
+  s="$(printf "%s" "$s" | sed 's/\.\{2,\}/./g; s/^\.*//; s/\.*$//')"
+
+  printf "%s" "$s"
+}
+
+# Reasonable gmail local-part length (keep it human-like).
+# Gmail allows longer, but typical addresses are short.
+clip_len() {
+  s="$1"
+  max="${2:-24}"
+  # POSIX-ish: use cut on bytes (fine for ASCII output)
+  printf "%s" "$s" | cut -c1-"$max"
+}
+
+rand_int() {
+  # faker random_int sometimes expects args; simplest:
+  faker -l "$locale" random_int
+}
+
+# Weighted pattern selection per country.
+# Return an integer "pattern id" used by gmail_localpart().
+pick_pattern() {
+  r="$(rand_int)"
+  # reduce r to 0..99
+  r=$((r % 100))
+
+  case "$cc" in
+    # Poland: firstname.lastname and firstlast are common; some initials.
+    pl)
+      if   [ "$r" -lt 55 ]; then echo 1
+      elif [ "$r" -lt 80 ]; then echo 2
+      elif [ "$r" -lt 92 ]; then echo 3
+      else                        echo 4
+      fi
+      ;;
+    # Germany: firstname.lastname strong; initials less frequent.
+    de)
+      if   [ "$r" -lt 65 ]; then echo 1
+      elif [ "$r" -lt 85 ]; then echo 2
+      elif [ "$r" -lt 95 ]; then echo 3
+      else                        echo 4
+      fi
+      ;;
+    # France: firstname.lastname and first.last; sometimes first initial + last.
+    fr)
+      if   [ "$r" -lt 60 ]; then echo 1
+      elif [ "$r" -lt 82 ]; then echo 2
+      elif [ "$r" -lt 94 ]; then echo 3
+      else                        echo 4
+      fi
+      ;;
+    # US: firstlast + numbers more common.
+    en)
+      if   [ "$r" -lt 35 ]; then echo 2
+      elif [ "$r" -lt 70 ]; then echo 1
+      elif [ "$r" -lt 90 ]; then echo 3
+      else                        echo 4
+      fi
+      ;;
+    # Default: balanced
+    *)
+      if   [ "$r" -lt 55 ]; then echo 1
+      elif [ "$r" -lt 80 ]; then echo 2
+      elif [ "$r" -lt 92 ]; then echo 3
+      else                        echo 4
+      fi
+      ;;
+  esac
+}
+
+# Build localpart from first/last with realistic patterns:
+# 1: firstname.lastname
+# 2: firstlast
+# 3: f.lastname
+# 4: firstname.l
+gmail_localpart() {
+  first="$1"
+  last="$2"
+
+  f="$(slugify "$first")"
+  l="$(slugify "$last")"
+
+  # Fallback if Faker returns odd strings
+  [ -n "$f" ] || f="user"
+  [ -n "$l" ] || l="name"
+
+  pat="$(pick_pattern)"
+
+  case "$pat" in
+    1) base="${f}.${l}" ;;
+    2) base="${f}${l}" ;;
+    3) base="$(printf "%s" "$f" | cut -c1).${l}" ;;
+    4) base="${f}.$(printf "%s" "$l" | cut -c1)" ;;
+    *) base="${f}.${l}" ;;
+  esac
+
+  base="$(slugify "$base")"
+  base="$(clip_len "$base" 24)"
+
+  # Add numeric suffix sometimes (more common in en, but possible everywhere).
+  rr="$(rand_int)"; rr=$((rr % 100))
+  add_num=0
+  case "$cc" in
+    en) [ "$rr" -lt 45 ] && add_num=1 ;;
+    *)  [ "$rr" -lt 25 ] && add_num=1 ;;
+  esac
+
+  if [ "$add_num" -eq 1 ]; then
+    # Use a 2–3 digit suffix; avoid looking too synthetic.
+    n="$(rand_int)"
+    n=$(( (n % 900) + 10 ))  # 10..909
+    base="$(clip_len "$base" 21)${n}"
+    base="$(slugify "$base")"
+  fi
+
+  # Final safety: ensure non-empty
+  [ -n "$base" ] || base="user$(( ( $(rand_int) % 9000 ) + 1000 ))"
+
+  printf "%s" "$base"
+}
+
+gmail_email() {
+  first="$(faker -l "$locale" first_name)"
+  last="$(faker -l "$locale" last_name)"
+
+  lp="$(gmail_localpart "$first" "$last")"
+
+  # De-dup within this run: if collision, append digits.
+  # (We store as newline-delimited list in $seen)
+  if printf "%s\n" "${seen:-}" | grep -qx "$lp" 2>/dev/null; then
+    k="$(rand_int)"; k=$(( (k % 900) + 10 ))
+    lp="$(clip_len "$lp" 21)${k}"
+    lp="$(slugify "$lp")"
+  fi
+  seen="${seen:-}
+$lp"
+
+  printf "%s@gmail.com\n" "$lp"
+}
+
+i=1
+seen=""
+while [ "$i" -le "$count" ]; do
+  faker -l "$locale" name
+  faker -l "$locale" address
+  faker -l "$locale" phone_number
+  gmail_email
+
+  if [ "$i" -lt "$count" ]; then
+    printf "\n"
+  fi
+
+  i=$((i + 1))
+done
+

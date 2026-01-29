@@ -11,14 +11,20 @@ TEMPLATE_DOMAIN="debian13-template"
 TEMPLATE_BASE="$BASEDIR/debian13-template.qcow2"
 
 usage() {
-  echo "Usage: kvm-lab-create <lab-name> [--base template|work01|/abs/path.qcow2] [--start]"
-  echo "Examples:"
-  echo "  kvm-lab-create lab10 --base template --start"
-  echo "  kvm-lab-create lab11 --base work01 --start"
-  echo "  kvm-lab-create lab12 --base /var/lib/libvirt/images/base/custom.qcow2 --start"
+  cat <<'EOF'
+Usage: kvm-lab-create <lab-name> [--base template|<prefix>|<domain>|<filename-in-base>|/abs/path.qcow2] [--start]
+
+Base resolution order:
+  1) template -> /var/lib/libvirt/images/base/debian13-template.qcow2
+  2) /abs/path.qcow2 -> that file
+  3) <filename in /var/lib/libvirt/images/base> -> /var/lib/libvirt/images/base/<filename>
+  4) <domain name> -> vda disk path of that domain (virsh domblklist)
+  5) <prefix> -> newest /var/lib/libvirt/images/base/<prefix>-base-*.qcow2
+EOF
 }
 
-# --- Parse args ---
+die() { echo "ERROR: $*" >&2; exit 1; }
+
 NAME="${1:-}"
 shift || true
 
@@ -27,97 +33,76 @@ START="no"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --base)
-      BASESEL="${2:-}"
-      shift 2
-      ;;
-    --start)
-      START="yes"
-      shift
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    *)
-      echo "ERROR: Unknown argument: $1"
-      usage
-      exit 1
-      ;;
+    --base)  BASESEL="${2:-}"; shift 2 ;;
+    --start) START="yes"; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) die "Unknown argument: $1" ;;
   esac
 done
 
-if [[ -z "$NAME" ]]; then
-  usage
-  exit 1
-fi
+[[ -n "$NAME" ]] || { usage; exit 1; }
 
 DISK="${LABDIR}/${NAME}.qcow2"
 XML_TMP="$(mktemp "/tmp/${NAME}.xml.XXXXXX")"
-cleanup() { rm -f "$XML_TMP"; }
+
+defined="no"
+cleanup() {
+  rm -f "$XML_TMP"
+  if [[ "$defined" != "yes" && -e "$DISK" ]]; then
+    echo "WARN: Removing orphan disk: $DISK"
+    sudo rm -f "$DISK" || true
+  fi
+}
 trap cleanup EXIT
 
-# --- Resolve base selection ---
 resolve_base() {
   local sel="$1"
+
   if [[ "$sel" == "template" ]]; then
-    echo "$TEMPLATE_BASE"
-    return 0
+    echo "$TEMPLATE_BASE"; return 0
   fi
 
-  if [[ "$sel" == "work01" ]]; then
-    # Pick newest promoted work01 base (must exist first)
-    local latest
-    latest="$(ls -1t "$BASEDIR"/work01-base-*.qcow2 2>/dev/null | head -n 1 || true)"
-    if [[ -z "$latest" ]]; then
-      echo "ERROR: No work01 base found in $BASEDIR (expected work01-base-*.qcow2)."
-      echo "Action: run your promote script to create one."
-      return 1
-    fi
-    echo "$latest"
-    return 0
-  fi
-
-  # Absolute path base
   if [[ "$sel" == /* ]]; then
-    echo "$sel"
-    return 0
+    echo "$sel"; return 0
   fi
 
-  echo "ERROR: Invalid --base '$sel' (use template|work01|/abs/path.qcow2)"
-  return 1
+  if [[ -f "$BASEDIR/$sel" ]]; then
+    echo "$BASEDIR/$sel"; return 0
+  fi
+
+  if virsh -c "$URI" dominfo "$sel" &>/dev/null; then
+    local src
+    src="$(virsh -c "$URI" domblklist "$sel" --details \
+      | awk '$2=="disk" && $3=="vda" {print $4; exit}')"
+    [[ -n "$src" ]] || die "Domain '$sel' found but could not resolve vda disk path."
+    echo "$src"; return 0
+  fi
+
+  local latest
+  latest="$(ls -1t "$BASEDIR"/"${sel}"-base-*.qcow2 2>/dev/null | head -n 1 || true)"
+  [[ -n "$latest" ]] || die "Invalid --base '$sel' (no matching domain/file/promoted base in $BASEDIR)."
+  echo "$latest"
 }
 
-BASE="$(resolve_base "$BASESEL")"
-
-# --- Preconditions (read-only checks) ---
-if [[ ! -d "$LABDIR" ]]; then
-  echo "ERROR: Lab directory missing: $LABDIR"
-  exit 1
-fi
-
-if ! sudo test -r "$BASE"; then
-  echo "ERROR: Base image not readable (via sudo): $BASE"
-  exit 1
-fi
-
-if [[ -e "$DISK" ]]; then
-  echo "ERROR: Disk already exists: $DISK"
-  exit 1
-fi
-
-if virsh -c "$URI" dominfo "$NAME" &>/dev/null; then
-  echo "ERROR: Domain already exists: $NAME"
-  exit 1
-fi
-
+# Preconditions
+[[ -d "$LABDIR" ]] || die "Lab directory missing: $LABDIR"
+[[ -d "$BASEDIR" ]] || die "Base directory missing: $BASEDIR"
 if ! virsh -c "$URI" dominfo "$TEMPLATE_DOMAIN" &>/dev/null; then
-  echo "ERROR: Template domain not found in $URI: $TEMPLATE_DOMAIN"
-  exit 1
+  die "Template domain not found in $URI: $TEMPLATE_DOMAIN"
 fi
 
-# --- Create overlay disk ---
-echo "Using base: $BASE"
+BASE="$(resolve_base "$BASESEL")"
+echo "Base selection: $BASESEL -> $BASE"
+
+[[ -f "$BASE" ]] || die "Base image not found: $BASE"
+sudo test -r "$BASE" || die "Base image not readable (via sudo): $BASE"
+
+[[ ! -e "$DISK" ]] || die "Disk already exists: $DISK"
+if virsh -c "$URI" dominfo "$NAME" &>/dev/null; then
+  die "Domain already exists: $NAME"
+fi
+
+# Create overlay
 echo "Creating overlay disk: $DISK"
 sudo qemu-img create -f qcow2 -F qcow2 -b "$BASE" "$DISK" >/dev/null
 sudo chown libvirt-qemu:libvirt "$DISK"
@@ -126,28 +111,37 @@ sudo chmod 0660 "$DISK"
 echo "Validating backing file..."
 sudo qemu-img info "$DISK" | grep -E "file format:|virtual size:|backing file:" || true
 
-# --- Clone domain XML ---
+# Clone template XML and adjust
 echo "Cloning domain XML from: $TEMPLATE_DOMAIN"
 virsh -c "$URI" dumpxml "$TEMPLATE_DOMAIN" > "$XML_TMP"
 
-# Set name, disk path, and force NAT-only network "default"
+# Update: name, disk source, network default
+# - replace <name>...</name> once
+# - replace template disk path with overlay path (global)
+# - force network='default'
 sed -i \
   -e "s|<name>${TEMPLATE_DOMAIN}</name>|<name>${NAME}</name>|" \
   -e "s|${TEMPLATE_BASE}|${DISK}|g" \
   -e "s|<source network='[^']*'|<source network='default'|g" \
   "$XML_TMP"
 
-# Remove UUID to avoid collision with template
+# Remove UUID and MAC addresses to avoid collisions
 sed -i -E '/<uuid>[^<]*<\/uuid>/d' "$XML_TMP"
+sed -i -E "s/<mac address='[^']*'\/>//g" "$XML_TMP"
 
-# Remove any host filesystem passthrough (if present)
+# Remove filesystem passthrough (if any)
 perl -0777 -i -pe 's/<filesystem[\s\S]*?<\/filesystem>\n?//g' "$XML_TMP"
 
-# --- Define domain ---
+# Validate substitutions happened
+grep -q "<name>${NAME}</name>" "$XML_TMP" || die "XML name substitution failed"
+grep -qF "$DISK" "$XML_TMP" || die "XML disk substitution failed"
+
+# Define domain
 echo "Defining domain: $NAME"
 virsh -c "$URI" define "$XML_TMP" >/dev/null
+defined="yes"
 
-# --- Optional start ---
+# Optional start
 if [[ "$START" == "yes" ]]; then
   echo "Starting domain: $NAME"
   virsh -c "$URI" start "$NAME" >/dev/null

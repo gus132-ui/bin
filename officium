@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Scriptum ad preces e Divinum Officium extrahendas
-# Auctor: Adam Kasprzak
+# Auctores: Adam Gomułka, Łukasz Kasprzak 
 # Data: 2026-01-13
-
+# Versio: 0.2
 set -o pipefail
 
 if [ $# -eq 0 ]; then

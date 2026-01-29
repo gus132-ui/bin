@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Optional dmenu theming
+# shellcheck disable=SC1090
+[[ -r "${HOME}/.local/bin/dmenu-theming" ]] && . "${HOME}/.local/bin/dmenu-theming"
+
+DMENU="${DMENU:-dmenu}"
+PROMPT="${PROMPT:-Config: }"
+EDITOR_CMD="${EDITOR_CMD:-vim}"
+TERM_CMD="${TERM_CMD:-st -e}"   # change to "alacritty -e" / "kitty -e" / "wezterm start --" if needed
+INDEX="${INDEX:-${HOME}/.config/dmenu/configs.tsv}"
+
+[[ -r "$INDEX" ]] || { printf "ERROR: cannot read %s\n" "$INDEX" >&2; exit 1; }
+
+# Build menu: show label, keep path as hidden second field
+menu="$(
+  awk -F'\t' 'NF>=2 {print $1 "\t" $2}' "$INDEX"
+)"
+
+picked="$(
+  printf "%s\n" "$menu" \
+  | ${DMENU} -i -l 20 -p "$PROMPT" ${lines:-} ${colors:-} ${font:-} \
+  || true
+)"
+[[ -n "$picked" ]] || exit 0
+
+path="$(printf "%s" "$picked" | awk -F'\t' '{print $2}')"
+[[ -n "$path" ]] || exit 0
+
+# Expand ~ manually (awk won’t expand it)
+path="${path/#\~/$HOME}"
+
+# If path is relative, treat it as relative to $HOME
+case "$path" in
+  /*) : ;;
+  *)  path="${HOME}/${path}" ;;
+esac
+
+# Decide whether we need sudo (simple heuristic: /etc, /usr, /var, /run)
+needs_sudo=0
+case "$path" in
+  /etc/*|/usr/*|/var/*|/run/*) needs_sudo=1 ;;
+esac
+
+# Open in terminal editor (no eval)
+if [[ $needs_sudo -eq 1 ]]; then
+  exec ${TERM_CMD} sudo -E "$EDITOR_CMD" "$path"
+else
+  exec ${TERM_CMD} "$EDITOR_CMD" "$path"
+fi
+

@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+URI="qemu:///system"
+LABDIR="/var/lib/libvirt/images/lab"
+
+NAME="${1:-}"
+
+if [[ -z "$NAME" ]]; then
+  echo "Usage: kvm-lab-destroy <lab-name>"
+  exit 1
+fi
+
+if [[ "$NAME" == "work01" || "$NAME" == "debian13-template" ]]; then
+  echo "Refusing to destroy protected VM: $NAME"
+  exit 1
+fi
+
+if ! virsh -c "$URI" dominfo "$NAME" &>/dev/null; then
+  echo "Domain not found: $NAME"
+  exit 1
+fi
+
+DISK="$(virsh -c "$URI" domblklist "$NAME" --details | awk '$3=="vda"{print $4}')"
+
+if [[ -z "$DISK" || "$DISK" != "$LABDIR/"* ]]; then
+  echo "Refusing to destroy: disk not under $LABDIR"
+  echo "Detected disk: $DISK"
+  exit 1
+fi
+
+STATE="$(virsh -c "$URI" domstate "$NAME")"
+
+if [[ "$STATE" == "running" ]]; then
+  echo "Shutting down $NAME..."
+  virsh -c "$URI" shutdown "$NAME"
+  sleep 3
+fi
+
+if [[ "$(virsh -c "$URI" domstate "$NAME")" == "running" ]]; then
+  echo "Force stopping $NAME..."
+  virsh -c "$URI" destroy "$NAME"
+fi
+
+echo "Undefining $NAME..."
+virsh -c "$URI" undefine "$NAME"
+
+echo "Deleting disk: $DISK"
+sudo rm -v -- "$DISK"
+
+echo "Lab '$NAME' destroyed."
+

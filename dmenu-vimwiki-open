@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Optional dmenu theming
+# shellcheck disable=SC1090
+[[ -r "${HOME}/.local/bin/dmenu-theming" ]] && . "${HOME}/.local/bin/dmenu-theming"
+
+DMENU="${DMENU:-dmenu}"
+PROMPT="${PROMPT:-VimWiki: }"
+EDITOR_CMD="${EDITOR_CMD:-vim}"
+TERM_CMD="${TERM_CMD:-st -e}"
+
+# Set this to your VimWiki root directory
+VIMWIKI_ROOT="${VIMWIKI_ROOT:-${HOME}/vimwiki}"   # <-- CHANGE if needed
+
+CACHE_DIR="${XDG_CACHE_HOME:-${HOME}/.cache}/dmenu"
+CACHE_FILE="${CACHE_DIR}/vimwiki_files.txt"
+CACHE_TTL_SECONDS="${CACHE_TTL_SECONDS:-30}"    # how long to trust the cache
+
+mkdir -p "$CACHE_DIR"
+
+now_epoch() { date +%s; }
+
+cache_is_fresh() {
+  [[ -r "$CACHE_FILE" ]] || return 1
+  local mtime
+  mtime="$(stat -c %Y "$CACHE_FILE" 2>/dev/null || echo 0)"
+  local age=$(( $(now_epoch) - mtime ))
+  [[ "$age" -le "$CACHE_TTL_SECONDS" ]]
+}
+
+build_cache() {
+  if command -v fd >/dev/null 2>&1; then
+    # Relative paths, ignore common junk
+    (cd "$VIMWIKI_ROOT" && fd -t f -H \
+      -E .git -E .cache -E node_modules -E .venv -E __pycache__ \
+      -E attachments -E media \
+      .) > "$CACHE_FILE"
+  else
+    (cd "$VIMWIKI_ROOT" && find . -type f \
+      ! -path './.git/*' \
+      ! -path './.cache/*' \
+      ! -path './node_modules/*' \
+      ! -path './.venv/*' \
+      ! -path './__pycache__/*' \
+      ! -path './attachments/*' \
+      ! -path './media/*' \
+      -print | sed 's|^\./||') > "$CACHE_FILE"
+  fi
+
+  # Sort for stable menu
+  sort -u -o "$CACHE_FILE" "$CACHE_FILE"
+}
+
+[[ -d "$VIMWIKI_ROOT" ]] || { printf "ERROR: VimWiki root not found: %s\n" "$VIMWIKI_ROOT" >&2; exit 1; }
+
+cache_is_fresh || build_cache
+
+picked="$(
+  cat "$CACHE_FILE" \
+  | ${DMENU} -i -l 20 -p "$PROMPT" ${lines:-} ${colors:-} ${font:-} \
+  || true
+)"
+[[ -n "$picked" ]] || exit 0
+
+# Safety: no parent traversal
+case "$picked" in
+  *'..'* ) exit 0 ;;
+esac
+
+target="${VIMWIKI_ROOT}/${picked}"
+[[ -e "$target" ]] || { printf "ERROR: missing: %s\n" "$target" >&2; exit 1; }
+
+exec ${TERM_CMD} "$EDITOR_CMD" "$target"
+
