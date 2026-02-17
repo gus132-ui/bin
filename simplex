@@ -1,0 +1,4 @@
+#!/bin/sh
+mkdir -p "$HOME/.cache/simplex-tmp"
+export TMPDIR="$HOME/.cache/simplex-tmp"
+exec st -e simplex-chat

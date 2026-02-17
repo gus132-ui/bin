@@ -1,24 +1,28 @@
 #!/bin/sh
 set -eu
 
+# Config
 : "${PASSWORD_STORE_DIR:=$HOME/.password-store}"
 DMENU="${DMENU:-dmenu}"
+OTP_PREFIX="${OTP_PREFIX:-otp}"   # expects entries under $PASSWORD_STORE_DIR/otp/
 
-# Build list of pass entry paths (relative to PASSWORD_STORE_DIR) that contain an otpauth:// line.
+otp_dir="$PASSWORD_STORE_DIR/$OTP_PREFIX"
+
+# If no otp/ subtree exists, exit quietly
+[ -d "$otp_dir" ] || exit 0
+
+# Build list of entry names from filenames only (no decryption).
 entries=$(
-  find "$PASSWORD_STORE_DIR" -type f -name '*.gpg' ! -path '*/.git/*' -print 2>/dev/null |
-  while IFS= read -r f; do
-    entry="${f#$PASSWORD_STORE_DIR/}"
-    entry="${entry%.gpg}"
-    if pass show "$entry" 2>/dev/null | grep -q '^otpauth://'; then
-      printf '%s\n' "$entry"
-    fi
-  done
+  find "$otp_dir" -type f -name '*.gpg' ! -path '*/.git/*' -print 2>/dev/null |
+    sed -e "s|^$PASSWORD_STORE_DIR/||" -e 's|\.gpg$||' |
+    sort
 )
 
 [ -n "${entries:-}" ] || exit 0
 
-choice=$(printf '%s\n' "$entries" | "$DMENU" -i -p "OTP:")
+choice=$(printf '%s\n' "$entries" | $DMENU -i -p "OTP:")
 [ -n "${choice:-}" ] || exit 0
 
+# Copy OTP to clipboard using pass-otp extension (-c handles clipboard + clearing).
 pass otp -c "$choice"
+

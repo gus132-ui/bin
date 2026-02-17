@@ -1,0 +1,26 @@
+#!/bin/sh
+set -eu
+
+DB="$HOME/.local/share/cheat-sheets/task-tags.tsv"
+
+[ -f "$DB" ] || exit 1
+
+choice="$(
+  cat "$DB" |
+  rofi -dmenu -i -p 'Naming conventions ›'
+)"
+
+[ -n "${choice:-}" ] || exit 0
+
+# First column = keystrokes
+keys="$(printf '%s' "$choice" | cut -f1)"
+
+# Clipboard (Wayland/X11)
+if command -v wl-copy >/dev/null 2>&1; then
+  printf '%s' "$keys" | wl-copy
+elif command -v xclip >/dev/null 2>&1; then
+  printf '%s' "$keys" | xclip -selection clipboard
+else
+  printf '%s\n' "$keys"
+fi
+

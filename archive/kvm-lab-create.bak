@@ -1,48 +1,103 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Libvirt context (system)
 URI="qemu:///system"
 
-# Base/template (immutable parent qcow2)
-BASE="/var/lib/libvirt/images/base/debian13-template.qcow2"
-TEMPLATE_DOMAIN="debian13-template"
+IMGROOT="/var/lib/libvirt/images"
+BASEDIR="$IMGROOT/base"
+LABDIR="$IMGROOT/lab"
 
-# Lab overlays directory (dedicated)
-LABDIR="/var/lib/libvirt/images/lab"
+TEMPLATE_DOMAIN="debian13-template"
+TEMPLATE_BASE="$BASEDIR/debian13-template.qcow2"
 
 usage() {
-  echo "Usage: kvm-lab-create <lab-name> [--start]"
-  echo "Example: kvm-lab-create lab02 --start"
+  echo "Usage: kvm-lab-create <lab-name> [--base template|work01|/abs/path.qcow2] [--start]"
+  echo "Examples:"
+  echo "  kvm-lab-create lab10 --base template --start"
+  echo "  kvm-lab-create lab11 --base work01 --start"
+  echo "  kvm-lab-create lab12 --base /var/lib/libvirt/images/base/custom.qcow2 --start"
 }
 
+# --- Parse args ---
 NAME="${1:-}"
-START="${2:-}"
+shift || true
+
+BASESEL="template"
+START="no"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --base)
+      BASESEL="${2:-}"
+      shift 2
+      ;;
+    --start)
+      START="yes"
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "ERROR: Unknown argument: $1"
+      usage
+      exit 1
+      ;;
+  esac
+done
 
 if [[ -z "$NAME" ]]; then
   usage
   exit 1
 fi
 
-if [[ "${START:-}" != "" && "${START:-}" != "--start" ]]; then
-  usage
-  exit 1
-fi
-
 DISK="${LABDIR}/${NAME}.qcow2"
 XML_TMP="$(mktemp "/tmp/${NAME}.xml.XXXXXX")"
-
 cleanup() { rm -f "$XML_TMP"; }
 trap cleanup EXIT
 
-# ---- Preconditions (read-only checks) ----
-if ! sudo test -r "$BASE"; then
-  echo "ERROR: Base image not readable: $BASE"
+# --- Resolve base selection ---
+resolve_base() {
+  local sel="$1"
+  if [[ "$sel" == "template" ]]; then
+    echo "$TEMPLATE_BASE"
+    return 0
+  fi
+
+  if [[ "$sel" == "work01" ]]; then
+    # Pick newest promoted work01 base (must exist first)
+    local latest
+    latest="$(ls -1t "$BASEDIR"/work01-base-*.qcow2 2>/dev/null | head -n 1 || true)"
+    if [[ -z "$latest" ]]; then
+      echo "ERROR: No work01 base found in $BASEDIR (expected work01-base-*.qcow2)."
+      echo "Action: run your promote script to create one."
+      return 1
+    fi
+    echo "$latest"
+    return 0
+  fi
+
+  # Absolute path base
+  if [[ "$sel" == /* ]]; then
+    echo "$sel"
+    return 0
+  fi
+
+  echo "ERROR: Invalid --base '$sel' (use template|work01|/abs/path.qcow2)"
+  return 1
+}
+
+BASE="$(resolve_base "$BASESEL")"
+
+# --- Preconditions (read-only checks) ---
+if [[ ! -d "$LABDIR" ]]; then
+  echo "ERROR: Lab directory missing: $LABDIR"
   exit 1
 fi
 
-if [[ ! -d "$LABDIR" ]]; then
-  echo "ERROR: Lab directory missing: $LABDIR"
+if ! sudo test -r "$BASE"; then
+  echo "ERROR: Base image not readable (via sudo): $BASE"
   exit 1
 fi
 
@@ -61,50 +116,45 @@ if ! virsh -c "$URI" dominfo "$TEMPLATE_DOMAIN" &>/dev/null; then
   exit 1
 fi
 
-# ---- Create overlay disk ----
+# --- Create overlay disk ---
+echo "Using base: $BASE"
 echo "Creating overlay disk: $DISK"
 sudo qemu-img create -f qcow2 -F qcow2 -b "$BASE" "$DISK" >/dev/null
-
-# Ensure qemu/libvirt can open it
 sudo chown libvirt-qemu:libvirt "$DISK"
 sudo chmod 0660 "$DISK"
 
-# Quick sanity: confirm backing file is correct
 echo "Validating backing file..."
-sudo qemu-img info "$DISK" | grep -E "backing file:|file format:|virtual size:" || true
+sudo qemu-img info "$DISK" | grep -E "file format:|virtual size:|backing file:" || true
 
-# ---- Clone domain XML ----
+# --- Clone domain XML ---
 echo "Cloning domain XML from: $TEMPLATE_DOMAIN"
 virsh -c "$URI" dumpxml "$TEMPLATE_DOMAIN" > "$XML_TMP"
 
-# Replace <name> and the disk path, and force NAT-only network "default"
-# Notes:
-# - disk path substitution assumes template points at /var/lib/libvirt/images/base/debian13-template.qcow2
-# - network replacement assumes a standard <interface type='network'> exists
+# Set name, disk path, and force NAT-only network "default"
 sed -i \
   -e "s|<name>${TEMPLATE_DOMAIN}</name>|<name>${NAME}</name>|" \
-  -e "s|${BASE}|${DISK}|g" \
+  -e "s|${TEMPLATE_BASE}|${DISK}|g" \
   -e "s|<source network='[^']*'|<source network='default'|g" \
   "$XML_TMP"
 
-# Extra safety: remove any hostfs passthrough (if any) to prevent host access via mounts
-# (If none exist, this does nothing.)
-perl -0777 -i -pe 's/<filesystem[\s\S]*?<\/filesystem>\n?//g' "$XML_TMP"
-#
 # Remove UUID to avoid collision with template
 sed -i -E '/<uuid>[^<]*<\/uuid>/d' "$XML_TMP"
-# ---- Define domain ----
+
+# Remove any host filesystem passthrough (if present)
+perl -0777 -i -pe 's/<filesystem[\s\S]*?<\/filesystem>\n?//g' "$XML_TMP"
+
+# --- Define domain ---
 echo "Defining domain: $NAME"
 virsh -c "$URI" define "$XML_TMP" >/dev/null
 
-# ---- Optional start ----
-if [[ "$START" == "--start" ]]; then
+# --- Optional start ---
+if [[ "$START" == "yes" ]]; then
   echo "Starting domain: $NAME"
   virsh -c "$URI" start "$NAME" >/dev/null
 fi
 
-echo "OK: Lab '${NAME}' created (disk: ${DISK})."
-if [[ "$START" != "--start" ]]; then
-  echo "To start: virsh -c $URI start ${NAME}"
+echo "OK: Lab '$NAME' created (disk: $DISK)."
+if [[ "$START" != "yes" ]]; then
+  echo "To start: virsh -c $URI start $NAME"
 fi
 
