@@ -1,0 +1,10 @@
+#!/bin/sh
+
+if mpc status | grep -q '^\[playing\]'; then
+    mpc pause
+    playerctl --all-players pause 2>/dev/null
+else
+    mpc play
+    playerctl --all-players play 2>/dev/null
+fi
+

@@ -1,0 +1,124 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  Downloads Sorter — Rules Configuration (TOML)
+#
+#  PRIORITY: content_keywords > filename_keywords
+#  File contents are scanned first; filename is used as fallback.
+#
+#  FOLDER PATHS: relative to your Downloads directory.
+#  Use / for subfolders, e.g. "Work/ARC"
+#
+#  KEYWORD TIPS:
+#  - Case-insensitive ("arc" matches "ARC", "Arc", "arc")
+#  - Partial match ("kasprzak" matches "Łukasz Kasprzak International Trade")
+#  - Always quote strings — avoids TOML type surprises with numbers
+#  - NIP/REGON/KRS numbers are the most reliable content keywords
+#  - Polish characters work fine (ł, ó, ą, ś, ź, etc.)
+#  - Categories are checked in order — first match wins
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Catch-all folder for files that match no category
+fallback_folder = "Other"
+
+# File types to scan (add or remove extensions as needed)
+supported_extensions = [
+    ".pdf",
+    ".docx",
+    ".doc",
+    ".txt",
+    ".xlsx",
+    ".xls",
+    ".md",
+    ".odt",
+]
+
+# ── Categories ────────────────────────────────────────────────────────────────
+# Each [[categories]] block defines one destination folder.
+# Add as many blocks as you need.
+
+[[categories]]
+name        = "Work/ARC"
+description = "Arc of Asia Sp. z o.o. — documents, invoices, correspondence"
+content_keywords = [
+    "arc of asia",
+    "arc of asia spółka z ograniczoną odpowiedzialnością",
+    "arc of asia spolka z ograniczona odpowiedzialnoscia",
+    "aleja grunwaldzka 56",
+    "9571181577",        # NIP
+    "540356138",         # REGON
+    "0001140839",        # KRS
+    "pl957118157700000", # EORI
+]
+filename_keywords = [
+    "arc",
+    "aoa",
+    "arc_of_asia",
+]
+
+[[categories]]
+name        = "Work/LKIT"
+description = "Łukasz Kasprzak International Trade — documents, invoices, correspondence"
+content_keywords = [
+    "łukasz kasprzak international trade",
+    "lukasz kasprzak international trade",
+    "8181739189",  # NIP
+    "540804571",   # REGON
+]
+filename_keywords = [
+    "lkit",
+    "kasprzak",
+]
+
+[[categories]]
+name        = "AKW"
+description = "Akademia Katolicka w Warszawie"
+content_keywords = [
+    "akademia katolicka w warszawie",
+    "akademia katolicka",
+]
+filename_keywords = [
+    "akw",
+]
+
+# ── Add more categories below ─────────────────────────────────────────────────
+
+# [[categories]]
+# name        = "Finance/Banking"
+# description = "Bank statements, Revolut, account history"
+# content_keywords = [
+#     "revolut",
+#     "account statement",
+#     "wyciąg bankowy",
+# ]
+# filename_keywords = [
+#     "revolut",
+#     "statement",
+#     "wyciag",
+# ]
+
+# [[categories]]
+# name        = "Finance/Invoices"
+# description = "VAT invoices and receipts"
+# content_keywords = [
+#     "faktura vat",
+#     "invoice",
+#     "23% vat",
+# ]
+# filename_keywords = [
+#     "faktura",
+#     "invoice",
+# ]
+
+# [[categories]]
+# name        = "Personal/Tax"
+# description = "Tax documents and PIT forms"
+# content_keywords = [
+#     "pit-37",
+#     "pit-36",
+#     "urząd skarbowy",
+#     "zeznanie podatkowe",
+# ]
+# filename_keywords = [
+#     "pit",
+#     "podatek",
+#     "tax",
+# ]
