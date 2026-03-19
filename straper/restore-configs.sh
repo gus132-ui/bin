@@ -201,13 +201,60 @@ restore_ssh() {
     return 0
   fi
 
-  maybe_restore "ssh" "sshd_config"   "${pub_users}/sshd_config"   "/etc/ssh/sshd_config"
-  maybe_restore "ssh" "sshd_config.d" "${pub_users}/sshd_config.d" "/etc/ssh/sshd_config.d"
+  if prompt_yes_no "Restore ssh/sshd_config -> /etc/ssh/sshd_config?" yes; then
+    restore_path "${SCRIPT_NAME}" "ssh" "sshd_config" \
+      "${pub_users}/sshd_config" "/etc/ssh/sshd_config" \
+      0644 root root || true
+  else
+    report "${SCRIPT_NAME}" "ssh" "sshd_config" "restore" "skipped" "operator skipped" ""
+  fi
+
+  if prompt_yes_no "Restore ssh/sshd_config.d -> /etc/ssh/sshd_config.d?" yes; then
+    restore_path "${SCRIPT_NAME}" "ssh" "sshd_config.d" \
+      "${pub_users}/sshd_config.d" "/etc/ssh/sshd_config.d" || true
+
+    if [[ ${DRY_RUN} == true ]]; then
+      printf '[dry] chown -R root:root /etc/ssh/sshd_config.d\n'
+      printf '[dry] find /etc/ssh/sshd_config.d -type d -exec chmod 0755 {} +\n'
+      printf '[dry] find /etc/ssh/sshd_config.d -type f -exec chmod 0644 {} +\n'
+    else
+      if [[ -d /etc/ssh/sshd_config.d ]]; then
+        chown -R root:root /etc/ssh/sshd_config.d 2>/dev/null || true
+        find /etc/ssh/sshd_config.d -type d -exec chmod 0755 {} + 2>/dev/null || true
+        find /etc/ssh/sshd_config.d -type f -exec chmod 0644 {} + 2>/dev/null || true
+      fi
+    fi
+
+    report "${SCRIPT_NAME}" "ssh" "sshd_config.d-metadata" "restore" "changed" \
+      "normalized /etc/ssh/sshd_config.d ownership=root:root dirs=0755 files=0644" ""
+  else
+    report "${SCRIPT_NAME}" "ssh" "sshd_config.d" "restore" "skipped" "operator skipped" ""
+  fi
 
   if [[ "${ROLE}" == "replacement" || "${ROLE}" == "hardware" ]]; then
     if [[ -d "${sec_ssh}/etc-ssh" ]]; then
       if prompt_yes_no "Restore SSH host keys from secret DB?" no; then
-        restore_path "${SCRIPT_NAME}" "ssh" "host-keys" "${sec_ssh}/etc-ssh" "/etc/ssh" || true
+        restore_path "${SCRIPT_NAME}" "ssh" "host-keys" \
+          "${sec_ssh}/etc-ssh" "/etc/ssh" || true
+
+        if [[ ${DRY_RUN} == true ]]; then
+          printf '[dry] chown root:root /etc/ssh\n'
+          printf '[dry] chmod 0755 /etc/ssh\n'
+          printf '[dry] find /etc/ssh -maxdepth 1 -type f -name '\''ssh_host_*_key'\'' -exec chown root:root {} +\n'
+          printf '[dry] find /etc/ssh -maxdepth 1 -type f -name '\''ssh_host_*_key'\'' -exec chmod 0600 {} +\n'
+          printf '[dry] find /etc/ssh -maxdepth 1 -type f -name '\''ssh_host_*_key.pub'\'' -exec chown root:root {} +\n'
+          printf '[dry] find /etc/ssh -maxdepth 1 -type f -name '\''ssh_host_*_key.pub'\'' -exec chmod 0644 {} +\n'
+        else
+          chown root:root /etc/ssh 2>/dev/null || true
+          chmod 0755 /etc/ssh 2>/dev/null || true
+          find /etc/ssh -maxdepth 1 -type f -name 'ssh_host_*_key' -exec chown root:root {} + 2>/dev/null || true
+          find /etc/ssh -maxdepth 1 -type f -name 'ssh_host_*_key' -exec chmod 0600 {} + 2>/dev/null || true
+          find /etc/ssh -maxdepth 1 -type f -name 'ssh_host_*_key.pub' -exec chown root:root {} + 2>/dev/null || true
+          find /etc/ssh -maxdepth 1 -type f -name 'ssh_host_*_key.pub' -exec chmod 0644 {} + 2>/dev/null || true
+        fi
+
+        report "${SCRIPT_NAME}" "ssh" "host-keys-metadata" "restore" "changed" \
+          "normalized SSH host key ownership=root:root private=0600 public=0644" ""
       else
         report "${SCRIPT_NAME}" "ssh" "host-keys" "restore" "skipped" "operator skipped host keys" ""
       fi
@@ -218,12 +265,21 @@ restore_ssh() {
 
   if [[ -d "${sec_ssh}/user-lukasz" ]]; then
     if prompt_yes_no "Restore lukasz user SSH material from secret DB?" no; then
-      restore_path "${SCRIPT_NAME}" "ssh" "user-lukasz" "${sec_ssh}/user-lukasz" "/home/lukasz/.ssh" || true
-      if [[ ${DRY_RUN} == false ]]; then
+      restore_path "${SCRIPT_NAME}" "ssh" "user-lukasz" \
+        "${sec_ssh}/user-lukasz" "/home/lukasz/.ssh" || true
+
+      if [[ ${DRY_RUN} == true ]]; then
+        printf '[dry] chown -R lukasz:lukasz /home/lukasz/.ssh\n'
+        printf '[dry] chmod 700 /home/lukasz/.ssh\n'
+        printf '[dry] find /home/lukasz/.ssh -maxdepth 1 -type f -exec chmod 600 {} +\n'
+      else
         chown -R lukasz:lukasz /home/lukasz/.ssh 2>/dev/null || true
         chmod 700 /home/lukasz/.ssh 2>/dev/null || true
-        find /home/lukasz/.ssh -maxdepth 1 -type f -exec chmod 600 {} \; 2>/dev/null || true
+        find /home/lukasz/.ssh -maxdepth 1 -type f -exec chmod 600 {} + 2>/dev/null || true
       fi
+
+      report "${SCRIPT_NAME}" "ssh" "user-lukasz-metadata" "restore" "changed" \
+        "normalized /home/lukasz/.ssh ownership=lukasz:lukasz dir=0700 files=0600" ""
     else
       report "${SCRIPT_NAME}" "ssh" "user-lukasz" "restore" "skipped" "operator skipped user ssh material" ""
     fi
@@ -353,35 +409,25 @@ restore_mariadb() {
     return 0
   fi
 
-  maybe_restore "mariadb" "etc-mysql" "${base}" "/etc/mysql"
-}
+  if prompt_yes_no "Restore mariadb/etc-mysql -> /etc/mysql?" yes; then
+    restore_path "${SCRIPT_NAME}" "mariadb" "etc-mysql" "${base}" "/etc/mysql" || true
 
-restore_postfix() {
-  local base="${PUBLIC_DIR}/postfix"
-  [[ -d "${base}" ]] || {
-    mark_manual "${SCRIPT_NAME}" "postfix" "db" "missing ${base}"
-    return 0
-  }
+    if [[ ${DRY_RUN} == true ]]; then
+      printf '[dry] chown -R root:root /etc/mysql\n'
+      printf '[dry] find /etc/mysql -type d -exec chmod 0755 {} +\n'
+      printf '[dry] find /etc/mysql -type f -exec chmod 0644 {} +\n'
+    else
+      if [[ -d /etc/mysql ]]; then
+        chown -R root:root /etc/mysql 2>/dev/null || true
+        find /etc/mysql -type d -exec chmod 0755 {} + 2>/dev/null || true
+        find /etc/mysql -type f -exec chmod 0644 {} + 2>/dev/null || true
+      fi
+    fi
 
-  if ! prompt_yes_no "Restore category 'postfix'?" no; then
-    report "${SCRIPT_NAME}" "postfix" "category" "restore" "skipped" "operator skipped category" ""
-    return 0
-  fi
-
-  if prompt_yes_no "Restore postfix/main.cf -> /etc/postfix/main.cf?" yes; then
-    restore_path "${SCRIPT_NAME}" "postfix" "main.cf" \
-      "${base}/main.cf" "/etc/postfix/main.cf" \
-      0644 root root || true
+    report "${SCRIPT_NAME}" "mariadb" "metadata" "restore" "changed" \
+      "normalized /etc/mysql ownership=root:root dirs=0755 files=0644" ""
   else
-    report "${SCRIPT_NAME}" "postfix" "main.cf" "restore" "skipped" "operator skipped" ""
-  fi
-
-  if prompt_yes_no "Restore postfix/master.cf -> /etc/postfix/master.cf?" yes; then
-    restore_path "${SCRIPT_NAME}" "postfix" "master.cf" \
-      "${base}/master.cf" "/etc/postfix/master.cf" \
-      0644 root root || true
-  else
-    report "${SCRIPT_NAME}" "postfix" "master.cf" "restore" "skipped" "operator skipped" ""
+    report "${SCRIPT_NAME}" "mariadb" "etc-mysql" "restore" "skipped" "operator skipped" ""
   fi
 }
 
@@ -438,11 +484,58 @@ restore_tor() {
     return 0
   fi
 
-  maybe_restore "tor" "torrc"   "${pub_base}/torrc"   "/etc/tor/torrc"
-  maybe_restore "tor" "torrc.d" "${pub_base}/torrc.d" "/etc/tor/torrc.d"
+  if prompt_yes_no "Restore tor/torrc -> /etc/tor/torrc?" yes; then
+    restore_path "${SCRIPT_NAME}" "tor" "torrc" \
+      "${pub_base}/torrc" "/etc/tor/torrc" \
+      0644 root root || true
+  else
+    report "${SCRIPT_NAME}" "tor" "torrc" "restore" "skipped" "operator skipped" ""
+  fi
+
+  if prompt_yes_no "Restore tor/torrc.d -> /etc/tor/torrc.d?" yes; then
+    restore_path "${SCRIPT_NAME}" "tor" "torrc.d" \
+      "${pub_base}/torrc.d" "/etc/tor/torrc.d" || true
+
+    if [[ ${DRY_RUN} == true ]]; then
+      printf '[dry] chown -R root:root /etc/tor/torrc.d\n'
+      printf '[dry] find /etc/tor/torrc.d -type d -exec chmod 0755 {} +\n'
+      printf '[dry] find /etc/tor/torrc.d -type f -exec chmod 0644 {} +\n'
+    else
+      if [[ -d /etc/tor/torrc.d ]]; then
+        chown -R root:root /etc/tor/torrc.d 2>/dev/null || true
+        find /etc/tor/torrc.d -type d -exec chmod 0755 {} + 2>/dev/null || true
+        find /etc/tor/torrc.d -type f -exec chmod 0644 {} + 2>/dev/null || true
+      fi
+    fi
+
+    report "${SCRIPT_NAME}" "tor" "torrc.d-metadata" "restore" "changed" \
+      "normalized /etc/tor/torrc.d ownership=root:root dirs=0755 files=0644" ""
+  else
+    report "${SCRIPT_NAME}" "tor" "torrc.d" "restore" "skipped" "operator skipped" ""
+  fi
 
   if [[ "${ROLE}" == "replacement" && -d "${sec_base}/var-lib-tor" ]]; then
-    maybe_restore "tor" "var-lib-tor" "${sec_base}/var-lib-tor" "/var/lib/tor"
+    if prompt_yes_no "Restore tor/var-lib-tor -> /var/lib/tor?" no; then
+      restore_path "${SCRIPT_NAME}" "tor" "var-lib-tor" \
+        "${sec_base}/var-lib-tor" "/var/lib/tor" || true
+
+      if [[ ${DRY_RUN} == true ]]; then
+        printf '[dry] chown -R debian-tor:debian-tor /var/lib/tor\n'
+        printf '[dry] find /var/lib/tor -type d -exec chmod 0700 {} +\n'
+        printf '[dry] find /var/lib/tor -type f -exec chmod 0600 {} +\n'
+      else
+        if [[ -d /var/lib/tor ]]; then
+          chown -R debian-tor:debian-tor /var/lib/tor 2>/dev/null || true
+          find /var/lib/tor -type d -exec chmod 0700 {} + 2>/dev/null || true
+          find /var/lib/tor -type f -exec chmod 0600 {} + 2>/dev/null || true
+        fi
+      fi
+
+      report "${SCRIPT_NAME}" "tor" "var-lib-tor-metadata" "restore" "changed" \
+        "normalized /var/lib/tor ownership=debian-tor:debian-tor dirs=0700 files=0600" ""
+    else
+      report "${SCRIPT_NAME}" "tor" "var-lib-tor" "restore" "skipped" "operator skipped" ""
+    fi
   else
     report "${SCRIPT_NAME}" "tor" "identity" "restore" "skipped" "tor private data not restored in this role" ""
   fi
@@ -457,10 +550,50 @@ restore_i2pd() {
     return 0
   fi
 
-  maybe_restore "i2pd" "etc-i2pd" "${pub_base}/etc-i2pd" "/etc/i2pd"
+  if prompt_yes_no "Restore i2pd/etc-i2pd -> /etc/i2pd?" yes; then
+    restore_path "${SCRIPT_NAME}" "i2pd" "etc-i2pd" \
+      "${pub_base}/etc-i2pd" "/etc/i2pd" || true
+
+    if [[ ${DRY_RUN} == true ]]; then
+      printf '[dry] chown -R root:root /etc/i2pd\n'
+      printf '[dry] find /etc/i2pd -type d -exec chmod 0755 {} +\n'
+      printf '[dry] find /etc/i2pd -type f -exec chmod 0644 {} +\n'
+    else
+      if [[ -d /etc/i2pd ]]; then
+        chown -R root:root /etc/i2pd 2>/dev/null || true
+        find /etc/i2pd -type d -exec chmod 0755 {} + 2>/dev/null || true
+        find /etc/i2pd -type f -exec chmod 0644 {} + 2>/dev/null || true
+      fi
+    fi
+
+    report "${SCRIPT_NAME}" "i2pd" "etc-i2pd-metadata" "restore" "changed" \
+      "normalized /etc/i2pd ownership=root:root dirs=0755 files=0644" ""
+  else
+    report "${SCRIPT_NAME}" "i2pd" "etc-i2pd" "restore" "skipped" "operator skipped" ""
+  fi
 
   if [[ "${ROLE}" == "replacement" && -d "${sec_base}/var-lib-i2pd" ]]; then
-    maybe_restore "i2pd" "var-lib-i2pd" "${sec_base}/var-lib-i2pd" "/var/lib/i2pd"
+    if prompt_yes_no "Restore i2pd/var-lib-i2pd -> /var/lib/i2pd?" no; then
+      restore_path "${SCRIPT_NAME}" "i2pd" "var-lib-i2pd" \
+        "${sec_base}/var-lib-i2pd" "/var/lib/i2pd" || true
+
+      if [[ ${DRY_RUN} == true ]]; then
+        printf '[dry] chown -R i2pd:i2pd /var/lib/i2pd\n'
+        printf '[dry] find /var/lib/i2pd -type d -exec chmod 0700 {} +\n'
+        printf '[dry] find /var/lib/i2pd -type f -exec chmod 0600 {} +\n'
+      else
+        if [[ -d /var/lib/i2pd ]]; then
+          chown -R i2pd:i2pd /var/lib/i2pd 2>/dev/null || true
+          find /var/lib/i2pd -type d -exec chmod 0700 {} + 2>/dev/null || true
+          find /var/lib/i2pd -type f -exec chmod 0600 {} + 2>/dev/null || true
+        fi
+      fi
+
+      report "${SCRIPT_NAME}" "i2pd" "var-lib-i2pd-metadata" "restore" "changed" \
+        "normalized /var/lib/i2pd ownership=i2pd:i2pd dirs=0700 files=0600" ""
+    else
+      report "${SCRIPT_NAME}" "i2pd" "var-lib-i2pd" "restore" "skipped" "operator skipped" ""
+    fi
   else
     report "${SCRIPT_NAME}" "i2pd" "identity" "restore" "skipped" "i2pd private data not restored in this role" ""
   fi
@@ -475,10 +608,17 @@ restore_docker() {
     return 0
   fi
 
-  maybe_restore "docker" "daemon.json" "${pub_base}/daemon.json" "/etc/docker/daemon.json"
+  if prompt_yes_no "Restore docker/daemon.json -> /etc/docker/daemon.json?" yes; then
+    restore_path "${SCRIPT_NAME}" "docker" "daemon.json" \
+      "${pub_base}/daemon.json" "/etc/docker/daemon.json" \
+      0644 root root || true
+  else
+    report "${SCRIPT_NAME}" "docker" "daemon.json" "restore" "skipped" "operator skipped" ""
+  fi
 
   if [[ -d "${sec_base}/compose-full" ]]; then
-    report "${SCRIPT_NAME}" "docker" "compose-full" "manual" "manual" "compose files available in secret DB; restore manually per stack" ""
+    report "${SCRIPT_NAME}" "docker" "compose-full" "manual" "manual" \
+      "compose files available in secret DB; restore manually per stack" ""
   fi
 }
 
@@ -488,11 +628,104 @@ restore_monitoring() {
     return 0
   fi
 
-  [[ -d "${PUBLIC_DIR}/prometheus/etc-prometheus" ]] && maybe_restore "monitoring" "prometheus" "${PUBLIC_DIR}/prometheus/etc-prometheus" "/etc/prometheus"
-  [[ -f "${PUBLIC_DIR}/prometheus/node-exporter-defaults" ]] && maybe_restore "monitoring" "prometheus-node-exporter" "${PUBLIC_DIR}/prometheus/node-exporter-defaults" "/etc/default/prometheus-node-exporter"
-  [[ -d "${PUBLIC_DIR}/loki/etc-loki" ]] && maybe_restore "monitoring" "loki" "${PUBLIC_DIR}/loki/etc-loki" "/etc/loki"
-  [[ -d "${PUBLIC_DIR}/grafana/etc-grafana" ]] && maybe_restore "monitoring" "grafana" "${PUBLIC_DIR}/grafana/etc-grafana" "/etc/grafana"
-  [[ -d "${SECRET_DIR}/alloy/etc-alloy" ]] && maybe_restore "monitoring" "alloy" "${SECRET_DIR}/alloy/etc-alloy" "/etc/alloy"
+  if [[ -d "${PUBLIC_DIR}/prometheus/etc-prometheus" ]]; then
+    if prompt_yes_no "Restore monitoring/prometheus -> /etc/prometheus?" yes; then
+      restore_path "${SCRIPT_NAME}" "monitoring" "prometheus" \
+        "${PUBLIC_DIR}/prometheus/etc-prometheus" "/etc/prometheus" || true
+
+      if [[ ${DRY_RUN} == true ]]; then
+        printf '[dry] chown -R root:root /etc/prometheus\n'
+        printf '[dry] find /etc/prometheus -type d -exec chmod 0755 {} +\n'
+        printf '[dry] find /etc/prometheus -type f -exec chmod 0644 {} +\n'
+      else
+        [[ -d /etc/prometheus ]] && chown -R root:root /etc/prometheus 2>/dev/null || true
+        [[ -d /etc/prometheus ]] && find /etc/prometheus -type d -exec chmod 0755 {} + 2>/dev/null || true
+        [[ -d /etc/prometheus ]] && find /etc/prometheus -type f -exec chmod 0644 {} + 2>/dev/null || true
+      fi
+
+      report "${SCRIPT_NAME}" "monitoring" "prometheus-metadata" "restore" "changed" \
+        "normalized /etc/prometheus ownership=root:root dirs=0755 files=0644" ""
+    else
+      report "${SCRIPT_NAME}" "monitoring" "prometheus" "restore" "skipped" "operator skipped" ""
+    fi
+  fi
+
+  if [[ -f "${PUBLIC_DIR}/prometheus/node-exporter-defaults" ]]; then
+    if prompt_yes_no "Restore monitoring/prometheus-node-exporter -> /etc/default/prometheus-node-exporter?" yes; then
+      restore_path "${SCRIPT_NAME}" "monitoring" "prometheus-node-exporter" \
+        "${PUBLIC_DIR}/prometheus/node-exporter-defaults" \
+        "/etc/default/prometheus-node-exporter" \
+        0644 root root || true
+    else
+      report "${SCRIPT_NAME}" "monitoring" "prometheus-node-exporter" "restore" "skipped" "operator skipped" ""
+    fi
+  fi
+
+  if [[ -d "${PUBLIC_DIR}/loki/etc-loki" ]]; then
+    if prompt_yes_no "Restore monitoring/loki -> /etc/loki?" yes; then
+      restore_path "${SCRIPT_NAME}" "monitoring" "loki" \
+        "${PUBLIC_DIR}/loki/etc-loki" "/etc/loki" || true
+
+      if [[ ${DRY_RUN} == true ]]; then
+        printf '[dry] chown -R root:root /etc/loki\n'
+        printf '[dry] find /etc/loki -type d -exec chmod 0755 {} +\n'
+        printf '[dry] find /etc/loki -type f -exec chmod 0644 {} +\n'
+      else
+        [[ -d /etc/loki ]] && chown -R root:root /etc/loki 2>/dev/null || true
+        [[ -d /etc/loki ]] && find /etc/loki -type d -exec chmod 0755 {} + 2>/dev/null || true
+        [[ -d /etc/loki ]] && find /etc/loki -type f -exec chmod 0644 {} + 2>/dev/null || true
+      fi
+
+      report "${SCRIPT_NAME}" "monitoring" "loki-metadata" "restore" "changed" \
+        "normalized /etc/loki ownership=root:root dirs=0755 files=0644" ""
+    else
+      report "${SCRIPT_NAME}" "monitoring" "loki" "restore" "skipped" "operator skipped" ""
+    fi
+  fi
+
+  if [[ -d "${PUBLIC_DIR}/grafana/etc-grafana" ]]; then
+    if prompt_yes_no "Restore monitoring/grafana -> /etc/grafana?" yes; then
+      restore_path "${SCRIPT_NAME}" "monitoring" "grafana" \
+        "${PUBLIC_DIR}/grafana/etc-grafana" "/etc/grafana" || true
+
+      if [[ ${DRY_RUN} == true ]]; then
+        printf '[dry] chown -R root:root /etc/grafana\n'
+        printf '[dry] find /etc/grafana -type d -exec chmod 0755 {} +\n'
+        printf '[dry] find /etc/grafana -type f -exec chmod 0644 {} +\n'
+      else
+        [[ -d /etc/grafana ]] && chown -R root:root /etc/grafana 2>/dev/null || true
+        [[ -d /etc/grafana ]] && find /etc/grafana -type d -exec chmod 0755 {} + 2>/dev/null || true
+        [[ -d /etc/grafana ]] && find /etc/grafana -type f -exec chmod 0644 {} + 2>/dev/null || true
+      fi
+
+      report "${SCRIPT_NAME}" "monitoring" "grafana-metadata" "restore" "changed" \
+        "normalized /etc/grafana ownership=root:root dirs=0755 files=0644" ""
+    else
+      report "${SCRIPT_NAME}" "monitoring" "grafana" "restore" "skipped" "operator skipped" ""
+    fi
+  fi
+
+  if [[ -d "${SECRET_DIR}/alloy/etc-alloy" ]]; then
+    if prompt_yes_no "Restore monitoring/alloy -> /etc/alloy?" yes; then
+      restore_path "${SCRIPT_NAME}" "monitoring" "alloy" \
+        "${SECRET_DIR}/alloy/etc-alloy" "/etc/alloy" || true
+
+      if [[ ${DRY_RUN} == true ]]; then
+        printf '[dry] chown -R root:root /etc/alloy\n'
+        printf '[dry] find /etc/alloy -type d -exec chmod 0755 {} +\n'
+        printf '[dry] find /etc/alloy -type f -exec chmod 0644 {} +\n'
+      else
+        [[ -d /etc/alloy ]] && chown -R root:root /etc/alloy 2>/dev/null || true
+        [[ -d /etc/alloy ]] && find /etc/alloy -type d -exec chmod 0755 {} + 2>/dev/null || true
+        [[ -d /etc/alloy ]] && find /etc/alloy -type f -exec chmod 0644 {} + 2>/dev/null || true
+      fi
+
+      report "${SCRIPT_NAME}" "monitoring" "alloy-metadata" "restore" "changed" \
+        "normalized /etc/alloy ownership=root:root dirs=0755 files=0644" ""
+    else
+      report "${SCRIPT_NAME}" "monitoring" "alloy" "restore" "skipped" "operator skipped" ""
+    fi
+  fi
 }
 
 for category in "${CATEGORIES[@]}"; do

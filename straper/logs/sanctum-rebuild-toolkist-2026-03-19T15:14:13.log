@@ -1,0 +1,325 @@
+# sanctum-rebuild-toolkit — lab validation log
+
+## Date
+
+* 2026-03-19
+
+## Scope
+
+* Objective: continue category-by-category validation of the Debian 13 disaster-recovery toolkit in a KVM/libvirt lab VM, keeping host `~/.local/bin/straper` as canonical source of truth.
+* Role under test: `lab`
+* DB under test: `/home/lukasz/sanctum-rebuild`
+* VM toolkit path: `~/rebuild-test/sanctum-rebuild-toolkit/`
+
+## Baseline assumptions
+
+* Edit only on host in `~/.local/bin/straper`, then sync to VM with `rsync`.
+* Test low-risk categories first.
+* Defer `network`, `dns`, `firewall`, `tor`, `i2pd`, `docker` category execution in lab.
+* Treat some doctor warnings as acceptable in `lab` when they reflect intentionally disabled or absent services.
+
+## Categories validated in this session
+
+* `nginx`
+* `mariadb`
+* `postfix`
+* `prosody`
+
+## Final lab baseline after this session
+
+* `doctor.sh` summary: `ok=20 warn=9 fail=0 manual=1`
+* Validated as working in `lab`:
+
+  * `system-basics`
+  * `ssh`
+  * `users`
+  * `nginx`
+  * `mariadb`
+  * `postfix`
+  * `prosody`
+
+## Problems found and fixes applied
+
+### 1. `nginx` restore imported production TLS/vhost state into `lab`
+
+#### Symptom
+
+* `sudo nginx -t` failed after restore.
+* Failure was due to missing production certificate paths such as:
+
+  * `/etc/letsencrypt/live/labunix.xyz/fullchain.pem`
+* Restored tree also contained junk such as:
+
+  * nested `/etc/nginx/nginx/...`
+  * `sites-available.bak.*`
+* `sites-enabled` contained a full production vhost set, including TLS-dependent vhosts.
+
+#### Root cause
+
+* `restore_nginx()` restored the captured nginx tree wholesale into `/etc/nginx`.
+* No `lab`-specific sanitization existed after restore.
+
+#### Fix applied
+
+* Patched `restore_nginx()` on host `restore-configs.sh`.
+* In `lab` role, after restore it now:
+
+  * removes `/etc/nginx/nginx`
+  * removes top-level `sites-available.bak.*`
+  * clears `sites-enabled`
+  * re-enables only `sites-available/default` if present
+
+#### Logic
+
+* In `lab`, restore enough nginx structure to validate service/config integrity, but do not enable production-facing TLS vhosts.
+* Avoid fake cert hacks.
+* Keep the change canonical in the host script, not as a VM-only workaround.
+
+#### Result
+
+* `sudo nginx -t` passed.
+* `doctor.sh` no longer reported nginx validation failure.
+
+---
+
+### 2. Shared restore logic preserved bad ownership/mode from snapshot DB
+
+#### Symptom
+
+* `postfix` restore left `/etc/postfix/main.cf` owned by `lukasz:lukasz`.
+* `postfix check` warned:
+
+  * `not owned by root: /etc/postfix/./main.cf`
+* `prosody` restore left:
+
+  * `/etc/prosody` = `0700 lukasz:lukasz`
+  * `/etc/prosody/prosody.cfg.lua` = `0600 lukasz:lukasz`
+* `prosodyctl check` failed because config was not readable by the `prosody` user.
+
+#### Root cause
+
+* `copy_path()` preserves metadata from the source snapshot (`cp -a` / `rsync -a`).
+* `restore_path()` only normalizes mode/ownership if explicit arguments are provided.
+* `restore_path()` previously returned early when contents matched, which prevented metadata normalization from running on already-identical files/trees.
+* Many categories used `maybe_restore()` without explicit mode/owner/group policy.
+
+#### Fix applied — shared helper
+
+* Patched `restore_path()` in host `common.sh`.
+* New behavior:
+
+  * if source and destination content are identical **and** no mode/owner/group is requested, return early as before
+  * if source and destination content are identical **but** metadata is requested, do **not** return early
+  * in metadata-only cases, skip copy and normalize metadata anyway
+
+#### Logic
+
+* Content equality must not block required metadata correction.
+* This prevents repeated restores from silently leaving sensitive files with incorrect owner/group/mode.
+
+---
+
+### 3. `postfix` category needed explicit file metadata policy
+
+#### Symptom
+
+* `/etc/postfix/main.cf` remained `lukasz:lukasz` after restore.
+
+#### Root cause
+
+* `restore_postfix()` used generic `maybe_restore()` for `main.cf` and `master.cf`.
+* No explicit owner/group/mode policy was applied.
+
+#### Fix applied
+
+* Replaced `restore_postfix()` with an explicit restore function using `restore_path()` directly.
+* Both files now restore with:
+
+  * owner: `root`
+  * group: `root`
+  * mode: `0644`
+
+#### Logic
+
+* These are sensitive service config files and should not depend on DB-captured metadata.
+* File-level normalization is the correct pattern for this category.
+
+#### Result
+
+* `/etc/postfix/main.cf` and `/etc/postfix/master.cf` now restore as `root:root`.
+* `postfix check` no longer warns about `main.cf` ownership.
+* Remaining warnings under `/var/spool/postfix/etc/*` were treated as runtime/chroot noise, not current restore-blocking defects.
+
+---
+
+### 4. `prosody` category needed directory-tree metadata normalization
+
+#### Symptom
+
+* `prosodyctl check` reported config unreadable by `prosody` user.
+
+#### Root cause
+
+* `restore_prosody()` restored `/etc/prosody` as a tree without normalizing permissions/ownership afterward.
+* Snapshot ownership from user-controlled files was preserved.
+
+#### Manual proof on VM
+
+* Manual correction used to confirm diagnosis:
+
+  * `chown -R root:root /etc/prosody`
+  * `find /etc/prosody -type d -exec chmod 0755 {} +`
+  * `find /etc/prosody -type f -exec chmod 0644 {} +`
+  * `chmod 0640 /etc/prosody/certs/*` where applicable
+* After manual normalization, `prosodyctl check` moved past the readability issue and only reported expected lab-environment DNS/cert/public-IP mismatches.
+
+#### Fix applied
+
+* Patched `restore_prosody()` on host `restore-configs.sh`.
+* After restoring `/etc/prosody`, it now normalizes:
+
+  * ownership: `root:root`
+  * directories: `0755`
+  * files: `0644`
+  * cert files (if present): `0640`
+
+#### Logic
+
+* Tree restores cannot use one blanket mode like `0644` on the root directory.
+* Directory/file/cert normalization must be handled separately after restore.
+
+#### Result
+
+* `prosodyctl check` no longer reports unreadable config.
+* Remaining findings are expected in `lab`:
+
+  * missing `lua-unbound`
+  * NAT/public-IP mismatch
+  * production DNS mismatch
+  * missing production Let’s Encrypt private key paths
+
+## Commands and validation patterns used
+
+### Canonical workflow
+
+* Edit host canonical copy only:
+
+  * `~/.local/bin/straper/restore-configs.sh`
+  * `~/.local/bin/straper/common.sh`
+* Syntax check before sync:
+
+  * `bash -n ~/.local/bin/straper/restore-configs.sh`
+  * `bash -n ~/.local/bin/straper/common.sh`
+* Sync to VM with `rsync`
+* Re-run only the affected category on VM
+* Validate service-specific behavior, then re-run `doctor.sh`
+
+### Service validation used
+
+* nginx:
+
+  * `sudo nginx -t`
+* mariadb:
+
+  * `sudo systemctl is-active mariadb`
+  * `sudo journalctl -u mariadb -n 20 --no-pager`
+  * `sudo mariadb -e 'SELECT VERSION();'`
+* postfix:
+
+  * `sudo postfix check`
+  * `sudo systemctl is-active postfix`
+  * `sudo journalctl -u postfix -n 20 --no-pager`
+  * `sudo ls -l /etc/postfix/main.cf /etc/postfix/master.cf`
+* prosody:
+
+  * `sudo prosodyctl check`
+  * `sudo systemctl is-active prosody`
+  * `sudo journalctl -u prosody -n 20 --no-pager`
+  * `sudo ls -ld /etc/prosody`
+  * `sudo ls -l /etc/prosody/prosody.cfg.lua`
+  * `sudo namei -l /etc/prosody/prosody.cfg.lua`
+* doctor baseline:
+
+  * `sudo bash ./doctor.sh --db-dir /home/lukasz/sanctum-rebuild --role lab`
+
+## Design lessons extracted
+
+### Invariant 1
+
+* Restoring config content is not enough.
+* Sensitive paths also require explicit metadata policy:
+
+  * owner
+  * group
+  * mode
+
+### Invariant 2
+
+* Tree restores and file restores need different strategies.
+* Files can use explicit `restore_path(... mode owner group)`.
+* Trees often need post-restore normalization with separate rules for directories and files.
+
+### Invariant 3
+
+* `lab` must not blindly import production-facing state.
+* Examples:
+
+  * production TLS vhosts
+  * production cert paths
+  * public DNS assumptions
+  * external-address checks tied to real deployment
+
+### Invariant 4
+
+* Shared helper behavior matters more than local category patches.
+* Fixing `restore_path()` was high leverage because it affects repeated restores everywhere.
+
+## Remaining warning set accepted in `lab`
+
+* `virtualization detected: kvm`
+* `unbound` root key missing
+* inactive intentionally deferred services:
+
+  * `dnsmasq`
+  * `unbound`
+  * `nftables`
+  * `tor`
+  * `i2pd`
+* not installed:
+
+  * `docker`
+  * `grafana-server`
+* `MANUAL| current run state file ...`
+
+## Known deferred items
+
+* Do not yet test these restore categories in `lab`:
+
+  * `network`
+  * `dns`
+  * `firewall`
+  * `tor`
+  * `i2pd`
+  * `docker`
+* Postfix chroot mirror warnings under `/var/spool/postfix/etc/*` are deferred for later runtime-hygiene review.
+* `doctor.sh` is not yet role-aware enough to downgrade all expected `lab` warnings.
+
+## Categories likely to need future metadata hardening review
+
+* `ssh`
+* `tor`
+* `i2pd`
+* `monitoring`
+* possibly `mariadb` tree permissions review
+* eventually `dns` / `firewall` once testing scope expands beyond current lab-safe subset
+
+## Recommended next move after this checkpoint
+
+* Treat this as a stable milestone.
+* Log or commit:
+
+  * `restore-configs.sh`
+  * `common.sh`
+  * updated rationale for `lab` restore behavior
+* Before expanding into riskier categories, perform a proactive audit of restore targets that still rely on generic `maybe_restore()` without explicit metadata normalization.
+
