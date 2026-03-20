@@ -84,7 +84,7 @@ BASE_PACKAGES=(
 )
 
 CORE_PACKAGES=(
-  wireguard wireguard-tools dnsmasq unbound nginx mariadb-server postfix prosody
+  wireguard wireguard-tools dnsmasq unbound dns-root-data nginx mariadb-server postfix prosody
   tor i2pd pygopherd mumble-server prometheus prometheus-node-exporter loki
   apparmor apparmor-utils
 )
