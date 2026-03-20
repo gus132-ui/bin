@@ -84,38 +84,39 @@ BASE_PACKAGES=(
 )
 
 CORE_PACKAGES=(
-  wireguard wireguard-tools dnsmasq unbound dns-root-data docker-ce docker-ce-cli containerd.io docker-compose-plugin nginx mariadb-server postfix prosody
+  wireguard wireguard-tools dnsmasq unbound dns-root-data docker.io docker-compose
+  nginx mariadb-server postfix prosody
   tor i2pd pygopherd mumble-server prometheus prometheus-node-exporter loki
   apparmor apparmor-utils
+  grafana
 )
 
 FULL_EXTRA_PACKAGES=(
   git tmux htop build-essential pkg-config
-  docker-ce docker-ce-cli containerd.io docker-compose-plugin
+  grafana alloy
 )
+
+
+setup_third_party_repos() {
+  # Grafana apt repo
+  if ! [[ -f /etc/apt/keyrings/grafana.gpg ]]; then
+    log "setting up Grafana apt repo..."
+    mkdir -p /etc/apt/keyrings
+    if curl -fsSL https://apt.grafana.com/gpg.key          | gpg --dearmor -o /etc/apt/keyrings/grafana.gpg 2>/dev/null; then
+      echo "deb [signed-by=/etc/apt/keyrings/grafana.gpg] https://apt.grafana.com stable main"         > /etc/apt/sources.list.d/grafana.list
+      report "${SCRIPT_NAME}" "apt" "grafana-repo" "setup" "changed" "Grafana apt repo configured" ""
+    else
+      warn "Failed to set up Grafana repo — grafana will not be installable"
+    fi
+  fi
+}
 
 bootstrap_dns_prepare() {
   local test_host="${BOOTSTRAP_TEST_HOST:-deb.debian.org}"
   local backup="/etc/resolv.conf.labunix-preinstall.bak"
 
-  # Always write a static resolv.conf for bootstrap — breaks any symlink to
-  # systemd-resolved stub which can disappear mid-install when services restart.
-  if [[ -e /etc/resolv.conf && ! -e "${backup}" ]]; then
-    cp -a /etc/resolv.conf "${backup}" || true
-  fi
-
   if getent ahostsv4 "${test_host}" >/dev/null 2>&1; then
-    # DNS works — write static file pointing at current resolver
-    local current_ns
-    current_ns="$(grep '^nameserver' /etc/resolv.conf 2>/dev/null | head -1 | awk '{print $2}')"
-    current_ns="${current_ns:-1.1.1.1}"
-    # Don't use stub addresses — they won't survive service restarts
-    if [[ "$current_ns" == "127.0.0.53" || "$current_ns" == "127.0.0.54" ]]; then
-      current_ns="1.1.1.1"
-    fi
-    printf 'nameserver %s\nnameserver 9.9.9.9\n' "$current_ns" > /etc/resolv.conf
-    chmod 644 /etc/resolv.conf
-    report "${SCRIPT_NAME}" "dns" "bootstrap" "check" "ok" "static resolv.conf written: ${current_ns}" ""
+    report "${SCRIPT_NAME}" "dns" "bootstrap" "check" "ok" "resolver already working" ""
     return 0
   fi
 
@@ -124,12 +125,17 @@ bootstrap_dns_prepare() {
     die "bootstrap DNS check failed: no outbound IP connectivity"
   fi
 
-  printf 'nameserver 1.1.1.1\nnameserver 9.9.9.9\n' > /etc/resolv.conf
-  chmod 644 /etc/resolv.conf
+  if command -v dig >/dev/null 2>&1 && dig +time=2 +tries=1 +short @1.1.1.1 "${test_host}" >/dev/null 2>&1; then
+    [[ -e /etc/resolv.conf && ! -e "${backup}" ]] && cp -a /etc/resolv.conf "${backup}" || true
+    printf 'nameserver 1.1.1.1
+nameserver 9.9.9.9
+' > /etc/resolv.conf
+    chmod 644 /etc/resolv.conf || true
 
-  if getent ahostsv4 "${test_host}" >/dev/null 2>&1; then
-    report "${SCRIPT_NAME}" "dns" "bootstrap" "fallback" "changed" "static fallback resolv.conf applied" "${backup}"
-    return 0
+    if getent ahostsv4 "${test_host}" >/dev/null 2>&1; then
+      report "${SCRIPT_NAME}" "dns" "bootstrap" "fallback" "changed" "static resolv.conf applied" "${backup}"
+      return 0
+    fi
   fi
 
   note_failure "${SCRIPT_NAME}" "dns" "bootstrap" "check" "DNS still broken after fallback attempt"
@@ -318,6 +324,8 @@ else
   report "${SCRIPT_NAME}" "apt" "update" "update" "ok" "initial apt update (dry-run)" ""
 fi
 
+setup_third_party_repos
+apt-get update -qq 2>/dev/null || true
 install_pkg_group base "${BASE_PACKAGES[@]}"
 case "${PROFILE}" in
   minimal) ;;

@@ -1184,6 +1184,15 @@ restore_nginx() {
 
   maybe_restore "nginx" "etc-nginx" "${base}" "/etc/nginx"
 
+  # Enable nginx — it will start properly after TLS certs are restored
+  if ! $DRY_RUN; then
+    systemctl enable nginx >/dev/null 2>&1 || true
+    # Only start if certs exist, otherwise nginx will fail to load
+    if [[ -d /etc/letsencrypt/live ]]; then
+      nginx -t >/dev/null 2>&1 && systemctl restart nginx >/dev/null 2>&1 || true
+    fi
+  fi
+
   if [[ "${ROLE}" == "lab" ]]; then
     if [[ ${DRY_RUN} == true ]]; then
       printf '[dry] sanitize /etc/nginx for lab role\n'
@@ -1279,6 +1288,8 @@ restore_postfix() {
     postfix set-permissions 2>/dev/null || true
     if postfix check 2>/dev/null; then
       report "${SCRIPT_NAME}" "postfix" "validate" "check" "ok" "postfix check passed" ""
+      systemctl enable postfix >/dev/null 2>&1 || true
+      systemctl restart postfix >/dev/null 2>&1 || true
     else
       note_failure "${SCRIPT_NAME}" "postfix" "validate" "check" "postfix check failed"
     fi
@@ -1636,10 +1647,11 @@ restore_tls() {
       report "${SCRIPT_NAME}" "tls" "expiry-check" "check" "ok" "certbot certificates checked" ""
     fi
 
-    # Reload nginx if running
+    # Start/reload nginx now that certs exist
     if ! $DRY_RUN && have_cmd nginx && nginx -t >/dev/null 2>&1; then
+      systemctl enable nginx >/dev/null 2>&1 || true
       systemctl reload nginx 2>/dev/null || systemctl start nginx 2>/dev/null || true
-      report "${SCRIPT_NAME}" "tls" "nginx-reload" "apply" "ok" "nginx reloaded with new certs" ""
+      report "${SCRIPT_NAME}" "tls" "nginx-reload" "apply" "ok" "nginx started/reloaded with certs" ""
     fi
   fi
 
