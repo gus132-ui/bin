@@ -1,579 +1,257 @@
-Below is a rewritten `README.md` that matches the **actual suite**, the **actual workflow**, and the **validated lessons** from today.
-
-````markdown
 # sanctum / labunix rebuild toolkit
 
-A modular rebuild toolkit for restoring a Debian 13 system in a controlled order:
+A modular disaster-recovery toolkit for rebuilding a Debian 13 server (`sanctum`) in a controlled, validated order.
 
-1. **capture**
-2. **lint**
-3. **install**
-4. **restore**
-5. **doctor**
+```
+capture → lint → install → restore → doctor
+```
 
-The goal is to reduce rebuild time from weeks to hours while keeping risky state changes explicit, reversible, and testable.
+Rebuild time: weeks → hours. All risky changes are explicit, reversible, and tested.
 
 ---
 
-## What this suite is for
+## Toolkit layout
 
-This toolkit is for rebuilding a server such as `sanctum` onto:
+```
+~/.local/bin/straper/
+├── capture-full.sh      Capture live server state into a rebuild DB
+├── lint-db.sh           Validate DB shape before trusting it for restore
+├── install-base.sh      Install packages and baseline — no identity transplant
+├── restore-configs.sh   Restore config categories from DB, one at a time
+├── doctor.sh            Read-only health and readiness checks
+├── rebuild.conf.example Optional config overrides
+└── lib/
+    └── common.sh        Shared helpers, restore_path(), report(), etc.
+```
 
-- a **lab VM** for safe testing
-- a **hardware-like machine** for conservative migration
-- a **replacement target** after real failure
-
-It is designed to separate:
-
-- **base OS/bootstrap**
-- **captured configuration state**
-- **service-by-service restore**
-- **read-only validation**
-
-This suite is intentionally **interactive by default** and does **not** assume that every category should be restored in one step.
-
----
-
-## Current toolkit components
-
-- `capture-full.sh` — captures the source machine into a rebuild DB
-- `lint-db.sh` — checks the DB for structural problems before restore
-- `install-base.sh` — installs packages and generic baseline only
-- `restore-configs.sh` — restores selected categories from the DB
-- `doctor.sh` — read-only health and readiness checks
-- `common.sh` — shared helpers and runtime/reporting functions
-
----
-
-## Core design rules
-
-- Keep **capture**, **restore**, and **verify** separate.
-- Prefer **fresh VMs or snapshots** when testing restore behavior.
-- Restore **category-by-category**, not all at once.
-- Do not let one failed item abort the whole restore run unless explicitly required.
-- Back up before overwrite.
-- Write machine-readable reports and state files.
-- Keep **identity/state restores** deliberate.
-- Do not touch risky network/DNS/firewall state early in a rebuild.
-- Treat the DB as a contract: **capture must produce a clean tree before restore can be trusted**.
+Runtime artifacts go to `/var/log/labunix-rebuild/` and `/var/lib/labunix-rebuild/`.
 
 ---
 
 ## Roles
 
-### `lab`
-Use for:
-- VM validation
-- dry runs
-- low-risk service restore tests
-
-Behavior:
-- conservative
-- identity-heavy/private restores are skipped or limited
-- network/DNS/firewall restore is intentionally deferred
-
-### `hardware`
-Use for:
-- real machine migration when you still want to stay conservative
-
-Behavior:
-- broader than `lab`
-- still avoids blindly assuming full disaster-recovery replacement semantics
-
-### `replacement`
-Use for:
-- real rebuild after failure
-- full recovery target where identities and service state may need to be restored
-
-Behavior:
-- allows more sensitive state restores when explicitly requested
-- should be used only after DB quality and restore flow have already been validated
+| Role | Use for | Behavior |
+|------|---------|----------|
+| `lab` | VM testing, dry runs | Skips DNS/firewall/network, no identity restores |
+| `hardware` | Real machine migration | Full adaptive restore, services started |
+| `replacement` | True disaster recovery | All restores including private identities |
 
 ---
 
 ## Canonical workflow
 
-## 1. On the source host: capture the DB
-
-Create a fresh rebuild DB from the live server:
+### Step 1 — Capture (on source host)
 
 ```bash
 sudo ~/.local/bin/straper/capture-full.sh
-````
-
-To capture into a different path:
-
-```bash
+# or to a specific path:
 sudo CAPTURE_DIR=/tmp/sanctum-rebuild-clean ~/.local/bin/straper/capture-full.sh
 ```
 
-This creates a rebuild database with:
+Produces `db/public/` (safe, git-tracked) and `db/secret/` (root-only, never committed).
 
-* `db/public/`
-* `db/secret/`
+### Step 2 — Lint
 
-### Important
-
-Capture should be run on the **real source machine**, not on the test VM.
-
----
-
-## 2. Lint the DB before trusting it
-
-Always lint the DB after capture and before restore:
+Always lint before restore. Do not proceed if lint fails.
 
 ```bash
 sudo ~/.local/bin/straper/lint-db.sh --db-dir /tmp/sanctum-rebuild-clean
 ```
 
-The linter is meant to catch DB-shape problems such as:
+Catches: nested duplicate roots, overlapping captures, backup junk, duplicate canonical files.
 
-* nested duplicate roots like `nginx/nginx` or `i2pd/i2pd`
-* overlapping category captures
-* captured backup directories like `*.bak.*`
-* duplicate canonical files at two depths
-
-### Rule
-
-If lint fails, do **not** treat that DB as canonical for restore.
-
----
-
-## 3. Move toolkit and DB to the target machine
-
-Typical pattern:
-
-### Copy toolkit
+### Step 3 — Transfer to target
 
 ```bash
-rsync -av --delete ~/.local/bin/straper/ lukasz@TARGET:~/.local/bin/straper/
-```
-
-### Copy DB
-
-```bash
+rsync -av ~/.local/bin/straper/ lukasz@TARGET:~/rebuild-test/sanctum-rebuild-toolkit/
 rsync -av /tmp/sanctum-rebuild-clean/db/ lukasz@TARGET:~/sanctum-rebuild/db/
 ```
 
-The target machine should then have:
-
-* toolkit in `~/.local/bin/straper/`
-* DB in `~/sanctum-rebuild/db/`
-
----
-
-## 4. Install base system first
-
-On the target machine:
-
-```bash
-cd ~/.local/bin/straper
-sudo bash ./install-base.sh --role lab --profile core
-```
-
-For real rebuilds, use the appropriate role:
-
-```bash
-sudo bash ./install-base.sh --role replacement --profile core
-```
-
-### What `install-base.sh` is for
-
-It prepares:
-
-* package set
-* generic base services
-* baseline directories and runtime assumptions
-
-It is **not** meant to transplant full server identity by itself.
-
----
-
-## 5. Restore configs category-by-category
-
-Do **not** restore everything blindly.
-
-Use `restore-configs.sh` in blocks, validating after each block.
-
-### Safe first block
-
-```bash
-sudo bash ./restore-configs.sh \
-  --db-dir /home/lukasz/sanctum-rebuild \
-  --role lab \
-  --category system-basics \
-  --category users \
-  --category ssh
-```
-
-### Service block
-
-```bash
-sudo bash ./restore-configs.sh \
-  --db-dir /home/lukasz/sanctum-rebuild \
-  --role lab \
-  --category nginx \
-  --category mariadb \
-  --category postfix \
-  --category prosody
-```
-
-### Additional validated categories
-
-```bash
-sudo bash ./restore-configs.sh \
-  --db-dir /home/lukasz/sanctum-rebuild \
-  --role lab \
-  --category monitoring \
-  --category docker \
-  --category tor \
-  --category i2pd
-```
-
-### Risky categories to leave for later
-
-These should be handled only after the machine is already stable:
-
-* `network`
-* `dns`
-* `firewall`
-
-And for replacement scenarios, also:
-
-* SSH host keys
-* `/var/lib/tor`
-* `/var/lib/i2pd`
-
----
-
-## 6. Run doctor after each block
-
-Use `doctor.sh` after install and after meaningful restore steps:
-
-```bash
-sudo bash ./doctor.sh --db-dir /home/lukasz/sanctum-rebuild --role lab
-```
-
-This gives a read-only summary of:
-
-* system readiness
-* config validation
-* service state
-* warning profile
-* current run state file
-
----
-
-## Validated restore order
-
-The currently validated rebuild order is:
-
-1. **capture on source host**
-2. **lint the DB**
-3. **move toolkit and DB to target**
-4. **run `install-base.sh`**
-5. **run `restore-configs.sh` category-by-category**
-6. **run `doctor.sh`**
-7. **only then move into risky network/identity categories**
-
-This is the canonical order to follow unless there is a strong reason to deviate.
-
----
-
-## Current restore categories
-
-`restore-configs.sh --list-categories` currently supports:
-
-* `system-basics`
-* `users`
-* `ssh`
-* `network`
-* `dns`
-* `firewall`
-* `nginx`
-* `mariadb`
-* `postfix`
-* `prosody`
-* `tor`
-* `i2pd`
-* `docker`
-* `monitoring`
-
----
-
-## What has been validated in `lab`
-
-The following categories have been exercised successfully in `lab`:
-
-* `system-basics`
-* `users`
-* `ssh`
-* `nginx`
-* `mariadb`
-* `postfix`
-* `prosody`
-* `docker`
-* `tor`
-* `i2pd`
-* `monitoring`
-
-### Important caveat
-
-For tree-category retests on a **reused VM**, stale files may survive because tree restores currently behave like **overlay restores**, not strict replacements.
-
-That means:
-
-* use a **fresh VM/snapshot** when possible, or
-* move the old destination tree aside before re-testing a tree category
-
-Examples of tree categories affected by this testing rule:
-
-* `nginx`
-* `monitoring`
-* `i2pd`
-* `mariadb`
-
-This is a testing-method concern, not necessarily a DB defect.
-
----
-
-## Public vs secret DB tiers
-
-## `db/public`
-
-Safe, non-secret inventory and configs intended for rebuild structure and general restore use.
-
-## `db/secret`
-
-Sensitive material such as:
-
-* SSH keys
-* TLS private keys
-* service secrets
-* database credentials
-* Tor/I2P private state
-* user shell configs that may contain tokens
-
-### Rule
-
-Do **not** commit `db/secret` to git.
-
----
-
-## Reports, backups, and state
-
-The suite writes runtime artifacts under:
-
-* `/var/log/labunix-rebuild/`
-* `/var/lib/labunix-rebuild/`
-
-Common outputs include:
-
-* report TSV files
-* doctor output
-* state files
-* per-run backups of overwritten targets
-
-### Typical state file
-
-* `/var/lib/labunix-rebuild/state-<RUN_ID>.env`
-
-### Typical report file
-
-* `/var/log/labunix-rebuild/report-<RUN_ID>.tsv`
-
----
-
-## Lab VM workflow
-
-Use this when validating on a fresh VM.
-
-### On source host
-
-```bash
-sudo CAPTURE_DIR=/tmp/sanctum-rebuild-clean ~/.local/bin/straper/capture-full.sh
-sudo ~/.local/bin/straper/lint-db.sh --db-dir /tmp/sanctum-rebuild-clean
-```
-
-### Copy to VM
-
-```bash
-rsync -av ~/.local/bin/straper/ lukasz@VM:~/rebuild-test/sanctum-rebuild-toolkit/
-rsync -av /tmp/sanctum-rebuild-clean/db/ lukasz@VM:~/sanctum-rebuild/db/
-```
-
-### On VM
+### Step 4 — Install base
 
 ```bash
 cd ~/rebuild-test/sanctum-rebuild-toolkit
 sudo bash ./install-base.sh --role lab --profile core
 ```
 
-Then restore in blocks and run `doctor.sh` after each block.
+Installs packages, sets up baseline, stops conflicting services. Does **not** restore any config.
 
----
+### Step 5 — Restore categories
 
-## Hardware / replacement workflow
+Restore in blocks. Run `doctor.sh` after each block.
 
-Use this when preparing a real migration or real recovery target.
-
-### On source machine
-
-Capture and lint first:
-
-```bash
-sudo ~/.local/bin/straper/capture-full.sh
-sudo ~/.local/bin/straper/lint-db.sh --db-dir /srv/sanctum-rebuild
-```
-
-### On target
-
-Install base:
-
-```bash
-sudo bash ./install-base.sh --role replacement --profile core
-```
-
-Restore safe categories first:
-
+**Safe first block:**
 ```bash
 sudo bash ./restore-configs.sh \
-  --db-dir /srv/sanctum-rebuild \
-  --role replacement \
-  --category system-basics \
-  --category users \
-  --category ssh
-```
-
-Then service categories:
-
-```bash
-sudo bash ./restore-configs.sh \
-  --db-dir /srv/sanctum-rebuild \
-  --role replacement \
-  --category nginx \
-  --category mariadb \
-  --category postfix \
-  --category prosody \
-  --category docker \
-  --category monitoring
-```
-
-Only after the machine is stable should you move into:
-
-* `network`
-* `dns`
-* `firewall`
-* identity/state-heavy restores
-
-Then run:
-
-```bash
-sudo bash ./doctor.sh --db-dir /srv/sanctum-rebuild --role replacement
-```
-
----
-
-## What this toolkit deliberately does not assume
-
-* that a dirty VM is a valid proof environment for repeated tree restores
-* that network restore is safe early
-* that secrets/identities should be transplanted automatically
-* that the DB is trustworthy unless it passes lint
-* that one giant all-at-once restore is the right recovery method
-
----
-
-## Known lessons from validation
-
-### 1. Metadata matters
-
-Restoring content is not enough. Sensitive files and trees also need:
-
-* owner
-* group
-* mode
-
-### 2. DB shape matters
-
-A structurally polluted DB can create duplicate nested restore trees even if restore logic is otherwise correct.
-
-### 3. Tree restores are not strict replacement
-
-Current behavior is overlay-style unless the destination is cleaned first.
-
-### 4. Testing method matters
-
-For tree-category retests:
-
-* use a fresh VM/snapshot, or
-* move the old destination aside first
-
----
-
-## Current recommended stopping rule
-
-A rebuild step is “good enough to proceed” when:
-
-* DB passes `lint-db.sh`
-* `install-base.sh` completes
-* restore block completes without new obvious regressions
-* `doctor.sh` baseline remains stable
-* service-specific validation passes where relevant
-
----
-
-## Minimal quick-reference
-
-### Capture
-
-```bash
-sudo ~/.local/bin/straper/capture-full.sh
-```
-
-### Lint
-
-```bash
-sudo ~/.local/bin/straper/lint-db.sh --db-dir /srv/sanctum-rebuild
-```
-
-### Install base
-
-```bash
-sudo bash ./install-base.sh --role lab --profile core
-```
-
-### Restore safe block
-
-```bash
-sudo bash ./restore-configs.sh \
-  --db-dir /home/lukasz/sanctum-rebuild \
+  --db-dir ~/sanctum-rebuild \
   --role lab \
   --category system-basics \
   --category users \
   --category ssh
 ```
 
-### Verify
+**Service block:**
+```bash
+sudo bash ./restore-configs.sh \
+  --db-dir ~/sanctum-rebuild \
+  --role lab \
+  --category nginx \
+  --category mariadb \
+  --category postfix \
+  --category prosody \
+  --category docker \
+  --category monitoring \
+  --category tor \
+  --category i2pd
+```
+
+**Risky block** (use `--role hardware` or `--role replacement`, run last):
+```bash
+sudo bash ./restore-configs.sh \
+  --db-dir ~/sanctum-rebuild \
+  --role hardware \
+  --category dns \
+  --category firewall \
+  --category network
+```
+
+### Step 6 — Verify
 
 ```bash
-sudo bash ./doctor.sh --db-dir /home/lukasz/sanctum-rebuild --role lab
+sudo bash ./doctor.sh --db-dir ~/sanctum-rebuild --role hardware
+```
+
+---
+
+## Smart adaptive restore
+
+`dns`, `firewall`, and `network` are not naive file copies — they adapt to the target machine.
+
+### DNS (`restore_dns`)
+
+1. Scans live interfaces, IPs, WireGuard ifaces, Docker bridges, port 53 owner
+2. Adapts `dnsmasq.conf` and all `dnsmasq.d/*` — strips non-live IPs from `listen-address`, comments out `interface=` lines for absent interfaces
+3. Classifies each file: `safe` | `dormant-wireguard` | `dormant-docker` | `dormant-hardware`
+4. Fetches `root.hints` from internic.net if referenced by unbound config
+5. Disables DNSSEC validator for bootstrap (re-enable manually once stable)
+6. Disables `systemd-resolved` stub listener if it would conflict with dnsmasq
+7. Starts unbound → dnsmasq in correct order, verifies each is listening
+8. Writes `/etc/resolv.conf` **only after** resolution is confirmed — falls back to `1.1.1.1` if not
+9. Prints precise manual task list
+
+WireGuard-dependent and Docker-dependent rules are preserved as dormant comments — they activate automatically when those interfaces come up.
+
+### Firewall (`restore_firewall`)
+
+1. Scans live interfaces
+2. Adapts `nftables.conf` — comments out rules referencing absent interfaces
+3. Classifies: `wg*` → dormant-wireguard, `enx*/eth*` → dormant-hardware-nic, `br-*/docker0` → dormant-docker (collapsed to one task)
+4. Validates with `nft -c` before loading
+5. Loads with `nft -f`, enables `nftables.service`
+
+### Network (`restore_network`)
+
+Restores `/etc/network`, `systemd-network`, `nsswitch.conf`, `hosts.allow/deny`. Skipped in `lab` role.
+
+---
+
+## Validated restore order
+
+```
+system-basics → users → ssh
+nginx → mariadb → postfix → prosody → docker → monitoring → tor → i2pd
+dns → firewall → network
+```
+
+DNS must come before firewall. Network last. Run `doctor.sh` after each block.
+
+---
+
+## Validated doctor baseline (hardware role)
+
+```
+Summary: ok=22 warn=7 fail=0 manual=1
+```
+
+Expected warnings in lab: `kvm` detected, `nftables` inactive before first boot, `docker`/`grafana` not installed, `tor`/`i2pd` not started, DNS chain intentional.
+
+---
+
+## Restore categories
+
+| Category | Risk | Notes |
+|----------|------|-------|
+| `system-basics` | low | hostname, hosts, locale, timezone |
+| `users` | low | sudoers with ownership fix, shells, login.defs |
+| `ssh` | low | sshd_config; host keys in hardware/replacement only |
+| `nginx` | low | lab: default site only, no production vhosts |
+| `mariadb` | low | /etc/mysql tree with normalization |
+| `postfix` | low | main.cf, master.cf with explicit root:root ownership |
+| `prosody` | low | tree + cert permission normalization |
+| `docker` | low | daemon.json; compose files are manual |
+| `monitoring` | low | prometheus, loki, grafana, alloy trees |
+| `tor` | low | torrc; /var/lib/tor only in replacement role |
+| `i2pd` | low | /etc/i2pd tree; /var/lib/i2pd only in replacement role |
+| `dns` | **risky** | smart adaptive — see above |
+| `firewall` | **risky** | smart adaptive — see above |
+| `network` | **risky** | skipped in lab |
+
+---
+
+## Known lessons
+
+**Metadata matters.** Content restore alone is not enough — owner, group, and mode must be normalized. `restore_path()` handles this.
+
+**DB shape matters.** A polluted DB produces bad restores even with correct logic. Always lint first.
+
+**Tree restores are overlay-style.** On a reused VM, stale files survive. Use a fresh VM or clean the destination before retesting.
+
+**resolv.conf is sacred.** Never write it until a local resolver is confirmed listening.
+
+**DNSSEC on Debian 13.** `unbound-anchor` is not shipped. Disable the validator module for initial bring-up; re-enable after the system is stable.
+
+**Service start order.** unbound must be listening before dnsmasq starts — dnsmasq validates its `server=` upstream at startup and exits with `INVALIDARGUMENT` if it can't reach it.
+
+**nftables interface references.** Rules referencing absent interfaces must be commented out or nftables refuses to load entirely.
+
+---
+
+## Public vs secret DB tiers
+
+`db/public/` — unencrypted, git-tracked. Safe for remote backup.
+
+`db/secret/` — root-only (`chmod 700`), never committed. Protected at rest by ZFS-on-LUKS. Contains SSH keys, TLS private keys, WireGuard keys, LUKS headers, service secrets.
+
+---
+
+## Quick reference
+
+```bash
+# Capture
+sudo ~/.local/bin/straper/capture-full.sh
+
+# Lint
+sudo ~/.local/bin/straper/lint-db.sh --db-dir /srv/sanctum-rebuild
+
+# Install
+sudo bash ./install-base.sh --role hardware --profile core
+
+# Restore (example)
+sudo bash ./restore-configs.sh \
+  --db-dir ~/sanctum-rebuild \
+  --role hardware \
+  --category dns
+
+# Verify
+sudo bash ./doctor.sh --db-dir ~/sanctum-rebuild --role hardware
+
+# List categories
+sudo bash ./restore-configs.sh --list-categories
 ```
 
 ---
 
 ## Status
 
-This suite is now suitable for:
-
-* structured lab rebuild testing
-* staged migration preparation
-* disciplined disaster-recovery rehearsal
-
-It should still be used with:
-
-* staged restores
-* DB linting
-* post-step validation
-* caution around risky network and identity layers
-
+All restore categories validated including risky (`dns`, `firewall`, `network`).
+Suitable for: structured lab testing, staged hardware migration, disciplined disaster-recovery rehearsal.
