@@ -1474,6 +1474,15 @@ restore_docker() {
     report "${SCRIPT_NAME}" "docker" "compose-full" "manual" "manual" \
       "compose files available in secret DB; restore manually per stack" ""
   fi
+
+  # Ensure primary user is in docker group
+  if ! $DRY_RUN && id "${PRIMARY_USER:-lukasz}" >/dev/null 2>&1; then
+    if ! id -nG "${PRIMARY_USER:-lukasz}" | grep -qw docker; then
+      usermod -aG docker "${PRIMARY_USER:-lukasz}" 2>/dev/null || true
+      report "${SCRIPT_NAME}" "docker" "docker-group" "fix" "changed" \
+        "${PRIMARY_USER:-lukasz} added to docker group — re-login required" ""
+    fi
+  fi
 }
 
 restore_monitoring() {
