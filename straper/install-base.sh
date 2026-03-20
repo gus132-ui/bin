@@ -84,14 +84,14 @@ BASE_PACKAGES=(
 )
 
 CORE_PACKAGES=(
-  wireguard wireguard-tools dnsmasq unbound dns-root-data docker.io nginx mariadb-server postfix prosody
+  wireguard wireguard-tools dnsmasq unbound dns-root-data docker-ce docker-ce-cli containerd.io docker-compose-plugin nginx mariadb-server postfix prosody
   tor i2pd pygopherd mumble-server prometheus prometheus-node-exporter loki
   apparmor apparmor-utils
 )
 
 FULL_EXTRA_PACKAGES=(
   git tmux htop build-essential pkg-config
-  docker.io
+  docker-ce docker-ce-cli containerd.io docker-compose-plugin
 )
 
 bootstrap_dns_prepare() {
