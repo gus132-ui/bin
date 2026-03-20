@@ -1,0 +1,14 @@
+services:
+  etherpad:
+    image: etherpad/etherpad:latest
+    container_name: etherpad
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - ./data:/opt/etherpad-lite/var
+      - ./data/settings.json:/opt/etherpad-lite/settings.json:ro
+    environment:
+      - TITLE=Etherpad
+      - DEFAULT_PAD_TEXT=Private collaboration pad
+

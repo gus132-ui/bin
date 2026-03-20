@@ -1,0 +1,3 @@
+root home=/root shell=/bin/bash
+lukasz home=/home/lukasz shell=/usr/bin/zsh
+borg home=/home/borg shell=/bin/bash

@@ -1,0 +1,266 @@
+{
+  "Id": "f967007629cd81e74bdc1e4a934349e226fe57a687b429b275963fb6fdc6fca7",
+  "Created": "2026-03-09T11:35:08.70062466Z",
+  "Path": "/usr/bin/supervisord",
+  "Args": [
+    "-c",
+    "/etc/supervisor/conf.d/supervisord.conf"
+  ],
+  "State": {
+    "Status": "running",
+    "Running": true,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 3776415,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-03-09T11:35:10.457246103Z",
+    "FinishedAt": "0001-01-01T00:00:00Z"
+  },
+  "Image": "sha256:489c0eb72d474185e97f9771ffdd9ccc49959a286ffa850ee88f473e87e1bda4",
+  "ResolvConfPath": "/var/lib/docker/containers/f967007629cd81e74bdc1e4a934349e226fe57a687b429b275963fb6fdc6fca7/resolv.conf",
+  "HostnamePath": "/var/lib/docker/containers/f967007629cd81e74bdc1e4a934349e226fe57a687b429b275963fb6fdc6fca7/hostname",
+  "HostsPath": "/var/lib/docker/containers/f967007629cd81e74bdc1e4a934349e226fe57a687b429b275963fb6fdc6fca7/hosts",
+  "LogPath": "/var/lib/docker/containers/f967007629cd81e74bdc1e4a934349e226fe57a687b429b275963fb6fdc6fca7/f967007629cd81e74bdc1e4a934349e226fe57a687b429b275963fb6fdc6fca7-json.log",
+  "Name": "/open-notebook-open_notebook-1",
+  "RestartCount": 0,
+  "Driver": "overlayfs",
+  "Platform": "linux",
+  "MountLabel": "",
+  "ProcessLabel": "",
+  "AppArmorProfile": "docker-default",
+  "ExecIDs": null,
+  "HostConfig": {
+    "Binds": [
+      "/srv/open-notebook/notebook_data:/app/data:rw",
+      "/srv/open-notebook/gai.conf:/etc/gai.conf:ro"
+    ],
+    "ContainerIDFile": "",
+    "LogConfig": {
+      "Type": "json-file",
+      "Config": {}
+    },
+    "NetworkMode": "open-notebook_default",
+    "PortBindings": {
+      "5055/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "5055"
+        }
+      ],
+      "8502/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "8502"
+        }
+      ]
+    },
+    "RestartPolicy": {
+      "Name": "always",
+      "MaximumRetryCount": 0
+    },
+    "AutoRemove": false,
+    "VolumeDriver": "",
+    "VolumesFrom": null,
+    "ConsoleSize": [
+      0,
+      0
+    ],
+    "CapAdd": null,
+    "CapDrop": null,
+    "CgroupnsMode": "private",
+    "Dns": [
+      "1.1.1.1",
+      "8.8.8.8"
+    ],
+    "DnsOptions": null,
+    "DnsSearch": null,
+    "ExtraHosts": [],
+    "GroupAdd": null,
+    "IpcMode": "private",
+    "Cgroup": "",
+    "Links": null,
+    "OomScoreAdj": 0,
+    "PidMode": "",
+    "Privileged": false,
+    "PublishAllPorts": false,
+    "ReadonlyRootfs": false,
+    "SecurityOpt": null,
+    "UTSMode": "",
+    "UsernsMode": "",
+    "ShmSize": 67108864,
+    "Runtime": "runc",
+    "Isolation": "",
+    "CpuShares": 0,
+    "Memory": 0,
+    "NanoCpus": 0,
+    "CgroupParent": "",
+    "BlkioWeight": 0,
+    "BlkioWeightDevice": null,
+    "BlkioDeviceReadBps": null,
+    "BlkioDeviceWriteBps": null,
+    "BlkioDeviceReadIOps": null,
+    "BlkioDeviceWriteIOps": null,
+    "CpuPeriod": 0,
+    "CpuQuota": 0,
+    "CpuRealtimePeriod": 0,
+    "CpuRealtimeRuntime": 0,
+    "CpusetCpus": "",
+    "CpusetMems": "",
+    "Devices": null,
+    "DeviceCgroupRules": null,
+    "DeviceRequests": null,
+    "MemoryReservation": 0,
+    "MemorySwap": 0,
+    "MemorySwappiness": null,
+    "OomKillDisable": null,
+    "PidsLimit": null,
+    "Ulimits": null,
+    "CpuCount": 0,
+    "CpuPercent": 0,
+    "IOMaximumIOps": 0,
+    "IOMaximumBandwidth": 0,
+    "MaskedPaths": [
+      "/proc/acpi",
+      "/proc/asound",
+      "/proc/interrupts",
+      "/proc/kcore",
+      "/proc/keys",
+      "/proc/latency_stats",
+      "/proc/sched_debug",
+      "/proc/scsi",
+      "/proc/timer_list",
+      "/proc/timer_stats",
+      "/sys/devices/virtual/powercap",
+      "/sys/firmware",
+      "/sys/devices/system/cpu/cpu0/thermal_throttle",
+      "/sys/devices/system/cpu/cpu1/thermal_throttle",
+      "/sys/devices/system/cpu/cpu2/thermal_throttle",
+      "/sys/devices/system/cpu/cpu3/thermal_throttle"
+    ],
+    "ReadonlyPaths": [
+      "/proc/bus",
+      "/proc/fs",
+      "/proc/irq",
+      "/proc/sys",
+      "/proc/sysrq-trigger"
+    ]
+  },
+  "Storage": {
+    "RootFS": {
+      "Snapshot": {
+        "Name": "overlayfs"
+      }
+    }
+  },
+  "Mounts": [
+    {
+      "Type": "bind",
+      "Source": "/srv/open-notebook/notebook_data",
+      "Destination": "/app/data",
+      "Mode": "rw",
+      "RW": true,
+      "Propagation": "rprivate"
+    },
+    {
+      "Type": "bind",
+      "Source": "/srv/open-notebook/gai.conf",
+      "Destination": "/etc/gai.conf",
+      "Mode": "ro",
+      "RW": false,
+      "Propagation": "rprivate"
+    }
+  ],
+  "Config": {
+    "Hostname": "f967007629cd",
+    "Domainname": "",
+    "User": "",
+    "AttachStdin": false,
+    "AttachStdout": true,
+    "AttachStderr": true,
+    "ExposedPorts": {
+      "5055/tcp": {},
+      "8502/tcp": {}
+    },
+    "Tty": false,
+    "OpenStdin": false,
+    "StdinOnce": false,
+    "Cmd": [
+      "/usr/bin/supervisord",
+      "-c",
+      "/etc/supervisor/conf.d/supervisord.conf"
+    ],
+    "Image": "lfnovo/open_notebook:v1-latest",
+    "Volumes": null,
+    "WorkingDir": "/app",
+    "Entrypoint": null,
+    "Labels": {
+      "com.docker.compose.config-hash": "268843244f6dabde52740c5fe6742115cc3a44630402b37b08ad33a263f767f6",
+      "com.docker.compose.container-number": "1",
+      "com.docker.compose.depends_on": "surrealdb:service_started:false",
+      "com.docker.compose.image": "sha256:489c0eb72d474185e97f9771ffdd9ccc49959a286ffa850ee88f473e87e1bda4",
+      "com.docker.compose.oneoff": "False",
+      "com.docker.compose.project": "open-notebook",
+      "com.docker.compose.project.config_files": "/srv/open-notebook/docker-compose.yml",
+      "com.docker.compose.project.working_dir": "/srv/open-notebook",
+      "com.docker.compose.replace": "open_notebook-1",
+      "com.docker.compose.service": "open_notebook",
+      "com.docker.compose.version": "5.1.0"
+    }
+  },
+  "NetworkSettings": {
+    "SandboxID": "c6aa36b29d1d5e242d05300c5c5750fc2e05495e414ff634ba48ea8b32ce06d1",
+    "SandboxKey": "/var/run/docker/netns/c6aa36b29d1d",
+    "Ports": {
+      "5055/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "5055"
+        }
+      ],
+      "8502/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "8502"
+        }
+      ]
+    },
+    "Networks": {
+      "open-notebook_default": {
+        "IPAMConfig": null,
+        "Links": null,
+        "Aliases": [
+          "open-notebook-open_notebook-1",
+          "open_notebook"
+        ],
+        "DriverOpts": null,
+        "GwPriority": 0,
+        "NetworkID": "3d1818651f84760702c8326eb55a5ed00536d64b58bc5ed96bd9ba1c647041b8",
+        "EndpointID": "70fc1961aeb26761a3a6a0da63e4d976e71da74d283211b3a5d23b769be57ce6",
+        "Gateway": "172.26.0.1",
+        "IPAddress": "172.26.0.3",
+        "MacAddress": "2a:6d:39:eb:68:be",
+        "IPPrefixLen": 16,
+        "IPv6Gateway": "",
+        "GlobalIPv6Address": "",
+        "GlobalIPv6PrefixLen": 0,
+        "DNSNames": [
+          "open-notebook-open_notebook-1",
+          "open_notebook",
+          "f967007629cd"
+        ]
+      }
+    }
+  },
+  "ImageManifestDescriptor": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:6a41042e1f4e4f00cc00e1cca413dd0ac402c8eee80ce9d25019856e376c038b",
+    "size": 3711,
+    "platform": {
+      "architecture": "amd64",
+      "os": "linux"
+    }
+  }
+}

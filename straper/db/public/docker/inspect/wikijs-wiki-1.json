@@ -1,0 +1,248 @@
+{
+  "Id": "5b3ecdcc01dfd43cec1e3c5118dc29ce521e2f10085f7dbb5b013029ae6f4d2d",
+  "Created": "2026-03-13T18:03:04.057365639Z",
+  "Path": "docker-entrypoint.sh",
+  "Args": [
+    "node",
+    "--no-deprecation",
+    "server"
+  ],
+  "State": {
+    "Status": "running",
+    "Running": true,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 2002251,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-03-13T18:03:04.389886211Z",
+    "FinishedAt": "0001-01-01T00:00:00Z"
+  },
+  "Image": "sha256:e013da5e3b634fb6e09f469f2d63fe3a138d79087455bf1e9d804c7bd5109a09",
+  "ResolvConfPath": "/var/lib/docker/containers/5b3ecdcc01dfd43cec1e3c5118dc29ce521e2f10085f7dbb5b013029ae6f4d2d/resolv.conf",
+  "HostnamePath": "/var/lib/docker/containers/5b3ecdcc01dfd43cec1e3c5118dc29ce521e2f10085f7dbb5b013029ae6f4d2d/hostname",
+  "HostsPath": "/var/lib/docker/containers/5b3ecdcc01dfd43cec1e3c5118dc29ce521e2f10085f7dbb5b013029ae6f4d2d/hosts",
+  "LogPath": "/var/lib/docker/containers/5b3ecdcc01dfd43cec1e3c5118dc29ce521e2f10085f7dbb5b013029ae6f4d2d/5b3ecdcc01dfd43cec1e3c5118dc29ce521e2f10085f7dbb5b013029ae6f4d2d-json.log",
+  "Name": "/wikijs-wiki-1",
+  "RestartCount": 0,
+  "Driver": "overlayfs",
+  "Platform": "linux",
+  "MountLabel": "",
+  "ProcessLabel": "",
+  "AppArmorProfile": "docker-default",
+  "ExecIDs": null,
+  "HostConfig": {
+    "Binds": null,
+    "ContainerIDFile": "",
+    "LogConfig": {
+      "Type": "json-file",
+      "Config": {}
+    },
+    "NetworkMode": "wikijs_default",
+    "PortBindings": {
+      "3000/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "9093"
+        }
+      ]
+    },
+    "RestartPolicy": {
+      "Name": "unless-stopped",
+      "MaximumRetryCount": 0
+    },
+    "AutoRemove": false,
+    "VolumeDriver": "",
+    "VolumesFrom": null,
+    "ConsoleSize": [
+      0,
+      0
+    ],
+    "CapAdd": null,
+    "CapDrop": null,
+    "CgroupnsMode": "private",
+    "Dns": null,
+    "DnsOptions": null,
+    "DnsSearch": null,
+    "ExtraHosts": [],
+    "GroupAdd": null,
+    "IpcMode": "private",
+    "Cgroup": "",
+    "Links": null,
+    "OomScoreAdj": 0,
+    "PidMode": "",
+    "Privileged": false,
+    "PublishAllPorts": false,
+    "ReadonlyRootfs": false,
+    "SecurityOpt": null,
+    "UTSMode": "",
+    "UsernsMode": "",
+    "ShmSize": 67108864,
+    "Runtime": "runc",
+    "Isolation": "",
+    "CpuShares": 0,
+    "Memory": 0,
+    "NanoCpus": 0,
+    "CgroupParent": "",
+    "BlkioWeight": 0,
+    "BlkioWeightDevice": null,
+    "BlkioDeviceReadBps": null,
+    "BlkioDeviceWriteBps": null,
+    "BlkioDeviceReadIOps": null,
+    "BlkioDeviceWriteIOps": null,
+    "CpuPeriod": 0,
+    "CpuQuota": 0,
+    "CpuRealtimePeriod": 0,
+    "CpuRealtimeRuntime": 0,
+    "CpusetCpus": "",
+    "CpusetMems": "",
+    "Devices": null,
+    "DeviceCgroupRules": null,
+    "DeviceRequests": null,
+    "MemoryReservation": 0,
+    "MemorySwap": 0,
+    "MemorySwappiness": null,
+    "OomKillDisable": null,
+    "PidsLimit": null,
+    "Ulimits": null,
+    "CpuCount": 0,
+    "CpuPercent": 0,
+    "IOMaximumIOps": 0,
+    "IOMaximumBandwidth": 0,
+    "MaskedPaths": [
+      "/proc/acpi",
+      "/proc/asound",
+      "/proc/interrupts",
+      "/proc/kcore",
+      "/proc/keys",
+      "/proc/latency_stats",
+      "/proc/sched_debug",
+      "/proc/scsi",
+      "/proc/timer_list",
+      "/proc/timer_stats",
+      "/sys/devices/virtual/powercap",
+      "/sys/firmware",
+      "/sys/devices/system/cpu/cpu0/thermal_throttle",
+      "/sys/devices/system/cpu/cpu1/thermal_throttle",
+      "/sys/devices/system/cpu/cpu2/thermal_throttle",
+      "/sys/devices/system/cpu/cpu3/thermal_throttle"
+    ],
+    "ReadonlyPaths": [
+      "/proc/bus",
+      "/proc/fs",
+      "/proc/irq",
+      "/proc/sys",
+      "/proc/sysrq-trigger"
+    ]
+  },
+  "Storage": {
+    "RootFS": {
+      "Snapshot": {
+        "Name": "overlayfs"
+      }
+    }
+  },
+  "Mounts": [
+    {
+      "Type": "volume",
+      "Name": "6ddf83af1a8182952ec4e1b90d14008315bf7346f32dd34e154b85966ad1ab9f",
+      "Source": "/var/lib/docker/volumes/6ddf83af1a8182952ec4e1b90d14008315bf7346f32dd34e154b85966ad1ab9f/_data",
+      "Destination": "/wiki/data/content",
+      "Driver": "local",
+      "Mode": "",
+      "RW": true,
+      "Propagation": ""
+    }
+  ],
+  "Config": {
+    "Hostname": "5b3ecdcc01df",
+    "Domainname": "",
+    "User": "node",
+    "AttachStdin": false,
+    "AttachStdout": true,
+    "AttachStderr": true,
+    "ExposedPorts": {
+      "3000/tcp": {},
+      "3443/tcp": {}
+    },
+    "Tty": false,
+    "OpenStdin": false,
+    "StdinOnce": false,
+    "Cmd": [
+      "node",
+      "--no-deprecation",
+      "server"
+    ],
+    "Image": "ghcr.io/requarks/wiki:2",
+    "Volumes": {
+      "/wiki/data/content": {}
+    },
+    "WorkingDir": "/wiki",
+    "Entrypoint": [
+      "docker-entrypoint.sh"
+    ],
+    "Labels": {
+      "com.docker.compose.config-hash": "54877f1f7e9be4a10bdfe68ce0a3ea5378e0295dda99a58ee15198611bdc3049",
+      "com.docker.compose.container-number": "1",
+      "com.docker.compose.depends_on": "db:service_started:false",
+      "com.docker.compose.image": "sha256:e013da5e3b634fb6e09f469f2d63fe3a138d79087455bf1e9d804c7bd5109a09",
+      "com.docker.compose.oneoff": "False",
+      "com.docker.compose.project": "wikijs",
+      "com.docker.compose.project.config_files": "/srv/wikijs/docker-compose.yml",
+      "com.docker.compose.project.working_dir": "/srv/wikijs",
+      "com.docker.compose.service": "wiki",
+      "com.docker.compose.version": "5.1.0",
+      "maintainer": "requarks.io"
+    }
+  },
+  "NetworkSettings": {
+    "SandboxID": "8eefcd45d5461a7d902c79a27d66bf606a7d799c66c6c1fbc4fdfbafb8aa7589",
+    "SandboxKey": "/var/run/docker/netns/8eefcd45d546",
+    "Ports": {
+      "3000/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "9093"
+        }
+      ],
+      "3443/tcp": null
+    },
+    "Networks": {
+      "wikijs_default": {
+        "IPAMConfig": null,
+        "Links": null,
+        "Aliases": [
+          "wikijs-wiki-1",
+          "wiki"
+        ],
+        "DriverOpts": null,
+        "GwPriority": 0,
+        "NetworkID": "ec92021c01d522c0271a9318465b04105467eeb0d7f6141c26adfc1b520f3283",
+        "EndpointID": "fc326e8fa2cbdcfcd7c84e0b31dfd193d190d27ef0be19ec121dc4e8c1ebfd06",
+        "Gateway": "172.29.0.1",
+        "IPAddress": "172.29.0.3",
+        "MacAddress": "d2:f5:e5:27:91:0b",
+        "IPPrefixLen": 16,
+        "IPv6Gateway": "",
+        "GlobalIPv6Address": "",
+        "GlobalIPv6PrefixLen": 0,
+        "DNSNames": [
+          "wikijs-wiki-1",
+          "wiki",
+          "5b3ecdcc01df"
+        ]
+      }
+    }
+  },
+  "ImageManifestDescriptor": {
+    "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+    "digest": "sha256:0b63cf36e18f17d252b5370aa2a5eb27bf4463d0f715a8ad57eb132fe7fc3f84",
+    "size": 3042,
+    "platform": {
+      "architecture": "amd64",
+      "os": "linux"
+    }
+  }
+}

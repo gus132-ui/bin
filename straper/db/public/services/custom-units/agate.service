@@ -1,0 +1,15 @@
+[Unit]
+Description=Agate Gemini Server
+After=network.target
+
+[Service]
+User=lukasz
+WorkingDirectory=/srv/gemini-capsule
+ExecStart=/home/lukasz/apps/agate/agate \
+  --content /srv/gemini-capsule \
+  --hostname gmi.labunix.xyz \
+  --addr 0.0.0.0:1965
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

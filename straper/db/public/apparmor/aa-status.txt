@@ -1,0 +1,260 @@
+apparmor module is loaded.
+116 profiles are loaded.
+17 profiles are in enforce mode.
+   /usr/bin/man
+   /usr/lib/NetworkManager/nm-dhcp-client.action
+   /usr/lib/connman/scripts/dhclient-script
+   /usr/{lib/NetworkManager,libexec}/nm-dhcp-helper
+   /{,usr/}sbin/dhclient
+   docker-default
+   i2pd
+   lsb_release
+   man_filter
+   man_groff
+   msmtp
+   msmtp//helpers
+   nvidia_modprobe
+   nvidia_modprobe//kmod
+   system_tor
+   tcpdump
+   unbound
+23 profiles are in complain mode.
+   Xorg
+   plasmashell
+   plasmashell//QtWebEngineProcess
+   sbuild
+   sbuild-abort
+   sbuild-adduser
+   sbuild-apt
+   sbuild-checkpackages
+   sbuild-clean
+   sbuild-createchroot
+   sbuild-destroychroot
+   sbuild-distupgrade
+   sbuild-hold
+   sbuild-shell
+   sbuild-unhold
+   sbuild-update
+   sbuild-upgrade
+   transmission-cli
+   transmission-daemon
+   transmission-gtk
+   transmission-qt
+   unix-chkpwd
+   unprivileged_userns
+0 profiles are in prompt mode.
+0 profiles are in kill mode.
+76 profiles are in unconfined mode.
+   1password
+   Discord
+   MongoDB Compass
+   QtWebEngineProcess
+   balena-etcher
+   brave
+   buildah
+   busybox
+   cam
+   ch-checkns
+   ch-run
+   chrome
+   chromium
+   crun
+   devhelp
+   element-desktop
+   epiphany
+   evolution
+   firefox
+   flatpak
+   foliate
+   geary
+   github-desktop
+   goldendict
+   ipa_verify
+   kchmviewer
+   keybase
+   lc-compliance
+   libcamerify
+   linux-sandbox
+   loupe
+   lxc-attach
+   lxc-create
+   lxc-destroy
+   lxc-execute
+   lxc-stop
+   lxc-unshare
+   lxc-usernsexec
+   mmdebstrap
+   msedge
+   nautilus
+   notepadqq
+   obsidian
+   opam
+   opera
+   pageedit
+   polypane
+   privacybrowser
+   qcam
+   qmapshack
+   qutebrowser
+   rootlesskit
+   rpm
+   rssguard
+   runc
+   scide
+   signal-desktop
+   slack
+   slirp4netns
+   steam
+   stress-ng
+   surfshark
+   systemd-coredump
+   toybox
+   trinity
+   tup
+   tuxedo-control-center
+   userbindmount
+   uwsgi-core
+   vdens
+   virtiofsd
+   vivaldi-bin
+   vpnns
+   vscode
+   wike
+   wpcom
+130 processes have profiles defined.
+130 processes are in enforce mode.
+   /usr/sbin/dhclient (1518) /{,usr/}sbin/dhclient
+   /opt/etherpad-lite/node_modules/.pnpm/@esbuild+linux-x64@0.27.2/node_modules/@esbuild/linux-x64/bin/esbuild (187498) docker-default
+   /usr/sbin/php-fpm84 (414326) docker-default
+   /usr/bin/s6-svscan (1137949) docker-default
+   /usr/bin/s6-supervise (1138019) docker-default
+   /usr/bin/s6-supervise (1138020) docker-default
+   /app/gitea/gitea (1138021) docker-default
+   /usr/sbin/sshd (1138022) docker-default
+   /usr/bin/dumb-init (1717413) docker-default
+   /usr/local/bin/node (1717464) docker-default
+   /usr/sbin/nscd (1722890) docker-default
+   /usr/local/bin/postgres (1727221) docker-default
+   /usr/local/bin/uwsgi (1727330) docker-default
+   /usr/local/bin/postgres (1727333) docker-default
+   /usr/local/bin/postgres (1727334) docker-default
+   /usr/local/bin/postgres (1727341) docker-default
+   /usr/local/bin/postgres (1727342) docker-default
+   /usr/local/bin/postgres (1727343) docker-default
+   /usr/local/bin/uwsgi (1727434) docker-default
+   /usr/local/bin/uwsgi (1727435) docker-default
+   /usr/local/bin/uwsgi (1727436) docker-default
+   /usr/local/bin/uwsgi (1727437) docker-default
+   /usr/bin/dash (1727438) docker-default
+   /usr/bin/dash (1727439) docker-default
+   /usr/local/bin/python3.13 (1727440) docker-default
+   /usr/local/bin/python3.13 (1727441) docker-default
+   /usr/local/bin/postgres (1727482) docker-default
+   /usr/local/bin/postgres (1727483) docker-default
+   /usr/local/bin/postgres (1832308) docker-default
+   /usr/bin/python3.14 (1844577) docker-default
+   /usr/bin/python3.14 (1845568) docker-default
+   /usr/bin/python3.14 (1845569) docker-default
+   /usr/bin/s6-svscan (1845790) docker-default
+   /usr/bin/s6-supervise (1845846) docker-default
+   /usr/bin/s6-supervise (1845847) docker-default
+   /usr/sbin/php-fpm84 (1845848) docker-default
+   /usr/bin/execline (1845849) docker-default
+   /usr/sbin/nginx (1845881) docker-default
+   /usr/sbin/nginx (1845883) docker-default
+   /usr/sbin/nginx (1845884) docker-default
+   /usr/sbin/nginx (1845885) docker-default
+   /usr/sbin/nginx (1845886) docker-default
+   /vaultwarden (1846097) docker-default
+   /usr/bin/tini (1903177) docker-default
+   /usr/bin/bash (1903229) docker-default
+   /usr/bin/Xvfb (1903580) docker-default
+   /usr/bin/bash (1903616) docker-default
+   /usr/bin/grep (1903618) docker-default
+   /usr/bin/python3.12 (1903619) docker-default
+   /usr/lib/libreoffice/program/oosplash (1903625) docker-default
+   /usr/lib/libreoffice/program/soffice.bin (1903669) docker-default
+   /opt/java/openjdk/bin/java (1903676) docker-default
+   /usr/bin/bash (1903841) docker-default
+   /usr/local/bin/postgres (2002154) docker-default
+   /usr/local/bin/node (2002251) docker-default
+   /usr/local/bin/postgres (2002353) docker-default
+   /usr/local/bin/postgres (2002354) docker-default
+   /usr/local/bin/postgres (2002356) docker-default
+   /usr/local/bin/postgres (2002357) docker-default
+   /usr/local/bin/postgres (2002358) docker-default
+   /usr/local/bin/postgres (2082343) docker-default
+   /usr/local/bin/redis-server (2273651) docker-default
+   /usr/sbin/mariadbd (2273789) docker-default
+   /usr/sbin/apache2 (2274007) docker-default
+   /usr/local/bin/node (2274021) docker-default
+   /usr/sbin/apache2 (2275028) docker-default
+   /usr/sbin/apache2 (2275032) docker-default
+   /usr/sbin/apache2 (2275034) docker-default
+   /usr/sbin/apache2 (2275035) docker-default
+   /usr/sbin/apache2 (2275036) docker-default
+   /usr/local/bin/node (2275386) docker-default
+   /usr/lib/postgresql/18/bin/postgres (2275669) docker-default
+   /usr/local/bin/redis-server (2275676) docker-default
+   /usr/local/bin/node (2275719) docker-default
+   /usr/local/bin/node (2275777) docker-default
+   /usr/lib/postgresql/18/bin/postgres (2275841) docker-default
+   /usr/lib/postgresql/18/bin/postgres (2275842) docker-default
+   /usr/lib/postgresql/18/bin/postgres (2275843) docker-default
+   /usr/lib/postgresql/18/bin/postgres (2275844) docker-default
+   /usr/lib/postgresql/18/bin/postgres (2275845) docker-default
+   /usr/lib/postgresql/18/bin/postgres (2275847) docker-default
+   /usr/lib/postgresql/18/bin/postgres (2275848) docker-default
+   /usr/lib/postgresql/18/bin/postgres (2275849) docker-default
+   /opt/etherpad-lite/node_modules/.pnpm/@esbuild+linux-x64@0.27.2/node_modules/@esbuild/linux-x64/bin/esbuild (2276124) docker-default
+   /usr/sbin/apache2 (2281371) docker-default
+   /usr/local/bin/python3.12 (2874950) docker-default
+   /usr/bin/sleep (2878751) docker-default
+   /usr/sbin/apache2 (2971000) docker-default
+   /usr/local/bin/node (3692065) docker-default
+   /usr/local/bin/node (3692190) docker-default
+   /usr/local/bin/node (3692201) docker-default
+   /usr/local/bin/node (3692202) docker-default
+   /usr/local/bin/node (3692203) docker-default
+   /usr/local/bin/node (3692204) docker-default
+   /usr/local/bin/node (3692231) docker-default
+   /usr/local/bin/node (3692232) docker-default
+   /usr/local/bin/node (3692233) docker-default
+   /usr/local/bin/node (3692234) docker-default
+   /usr/sbin/php-fpm84 (3719873) docker-default
+   /usr/sbin/php-fpm84 (3720135) docker-default
+   /package/admin/s6-2.13.2.0/command/s6-svscan (3730488) docker-default
+   /package/admin/s6-2.13.2.0/command/s6-supervise (3730553) docker-default
+   /package/admin/s6-linux-init-1.1.3.0/command/s6-linux-init-shutdownd (3730554) docker-default
+   /package/admin/s6-2.13.2.0/command/s6-supervise (3730567) docker-default
+   /package/admin/s6-2.13.2.0/command/s6-supervise (3730568) docker-default
+   /package/admin/s6-2.13.2.0/command/s6-supervise (3730569) docker-default
+   /package/admin/s6-2.13.2.0/command/s6-supervise (3730570) docker-default
+   /package/admin/s6-2.13.2.0/command/s6-supervise (3730571) docker-default
+   /package/admin/s6-2.13.2.0/command/s6-supervise (3730572) docker-default
+   /package/admin/s6-2.13.2.0/command/s6-supervise (3730573) docker-default
+   /package/admin/s6-2.13.2.0/command/s6-ipcserverd (3730581) docker-default
+   /usr/local/bin/python3.12 (3730720) docker-default
+   /usr/local/bin/python3.12 (3730721) docker-default
+   /usr/local/bin/python3.12 (3730727) docker-default
+   /usr/local/bin/python3.12 (3730734) docker-default
+   /usr/local/bin/python3.12 (3730755) docker-default
+   /usr/lib/postgresql/18/bin/postgres (3730792) docker-default
+   /usr/lib/postgresql/18/bin/postgres (3730808) docker-default
+   /surreal (3776302) docker-default
+   /usr/bin/python3.11 (3776415) docker-default
+   /usr/bin/uv (3776500) docker-default
+   /usr/bin/uv (3776501) docker-default
+   /usr/bin/node (3776502) docker-default
+   /usr/local/bin/python3.12 (3776512) docker-default
+   /usr/local/bin/python3.12 (3776513) docker-default
+   /usr/sbin/apache2 (3785224) docker-default
+   /usr/sbin/apache2 (3795667) docker-default
+   /usr/bin/i2pd (466784) i2pd
+   /usr/bin/tor (3895230) system_tor
+   /usr/sbin/unbound (1407409) unbound
+0 processes are in complain mode.
+0 processes are in prompt mode.
+0 processes are in kill mode.
+0 processes are unconfined but have a profile defined.
+0 processes are in mixed mode.

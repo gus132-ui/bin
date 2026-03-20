@@ -1,0 +1,18 @@
+[sshd-session-preauth]
+enabled  = true
+backend  = systemd
+filter   = sshd-session-preauth
+# journal match: use the unit and/or the SYSLOG_IDENTIFIER seen in logs
+journalmatch = _SYSTEMD_UNIT=ssh.service + SYSLOG_IDENTIFIER=sshd-session
+
+# Your SSH is on 57385; Fail2ban does not need it for matching, but does for actions:
+port     = 57385
+mode     = aggressive
+
+# Thresholds (safe defaults; adjust later)
+findtime = 10m
+maxretry = 5
+bantime  = 24h
+
+# nftables action (single-IP bans)
+banaction = nftables

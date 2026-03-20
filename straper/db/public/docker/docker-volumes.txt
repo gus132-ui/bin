@@ -1,0 +1,11 @@
+DRIVER    VOLUME NAME
+local     6ddf83af1a8182952ec4e1b90d14008315bf7346f32dd34e154b85966ad1ab9f
+local     016b869733ba7d86203e68d069acc56cc0d5d45ab66612e9745e725816d35f79
+local     29d5cea757b97aa12bd8085a6edaaf23ebfd2c45a1ae3678d3a8f8bb8826d269
+local     40cf104fded7e2e45acb0810b0e4f5030cc6ab3784f081047b3037a4d742093a
+local     e92385bca5aff1470a90799721002ff6cc05682b45b7b4384b7d80e2c76e048f
+local     f05486b814b076d7d64e790b7d5ad05e0d0cab4536a0f67db21250973380ffc1
+local     fe0d35e2d9756066f63ad6cbe2c06c2ad822c44c1349d3258b100120bd2027f1
+local     nextcloud_db
+local     nextcloud_nextcloud
+local     paperless_redisdata

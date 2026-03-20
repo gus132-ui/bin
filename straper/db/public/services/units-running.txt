@@ -1,0 +1,49 @@
+  UNIT                              LOAD   ACTIVE SUB     DESCRIPTION
+  agate.service                     loaded active running Agate Gemini Server
+  alloy.service                     loaded active running Vendor-agnostic OpenTelemetry Collector distribution with programmable pipelines
+  containerd.service                loaded active running containerd container runtime
+  cron.service                      loaded active running Regular background program processing daemon
+  dbus.service                      loaded active running D-Bus System Message Bus
+  dnsmasq.service                   loaded active running dnsmasq (local DNS forwarder)
+  docker.service                    loaded active running Docker Application Container Engine
+  fail2ban.service                  loaded active running Fail2Ban Service
+  getty@tty1.service                loaded active running Getty on tty1
+  grafana-server.service            loaded active running Grafana instance
+  i2pd.service                      loaded active running I2P Router written in C++
+  loki.service                      loaded active running Loki service
+  lufi.service                      loaded active running Lufi (Mojolicious)
+  mariadb.service                   loaded active running MariaDB 11.8.6 database server
+  mumble-server.service             loaded active running Mumble server
+  NetworkManager.service            loaded active running Network Manager
+  nginx.service                     loaded active running A high performance web server and a reverse proxy server
+  polkit.service                    loaded active running Authorization Manager
+  postfix.service                   loaded active running Postfix Mail Transport Agent (main/default instance)
+  prometheus-node-exporter.service  loaded active running Prometheus exporter for machine metrics
+  prometheus.service                loaded active running Monitoring system and time series database
+  prosody.service                   loaded active running Prosody XMPP Server
+  pygopherd.service                 loaded active running Pygopherd Server
+  smartmontools.service             loaded active running Self Monitoring and Reporting Technology (SMART) Daemon
+  speedtest-exporter.service        loaded active running Prometheus Speedtest Exporter
+  ssh.service                       loaded active running OpenBSD Secure Shell server
+  systemd-ask-password-wall.service loaded active running Forward Password Requests to Wall
+  systemd-journald.service          loaded active running Journal Service
+  systemd-logind.service            loaded active running User Login Management
+  systemd-networkd.service          loaded active running Network Configuration
+  systemd-resolved.service          loaded active running Network Name Resolution
+  systemd-timedated.service         loaded active running Time & Date Service
+  systemd-timesyncd.service         loaded active running Network Time Synchronization
+  systemd-udevd.service             loaded active running Rule-based Manager for Device Events and Files
+  tor@default.service               loaded active running Anonymizing overlay network for TCP
+  udisks2.service                   loaded active running Disk Manager
+  unattended-upgrades.service       loaded active running Unattended Upgrades Shutdown
+  unbound.service                   loaded active running Unbound DNS server
+  user@1000.service                 loaded active running User Manager for UID 1000
+  uuidd.service                     loaded active running Daemon for generating UUIDs
+  wpa_supplicant.service            loaded active running WPA supplicant
+  zfs-zed.service                   loaded active running ZFS Event Daemon (zed)
+
+Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+        ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
+        SUB    → The low-level unit activation state, values depend on unit type.
+
+42 loaded units listed.

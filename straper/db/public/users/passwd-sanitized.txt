@@ -1,0 +1,50 @@
+root:0:0:root:/root:/bin/bash
+daemon:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:2:2:bin:/bin:/usr/sbin/nologin
+sys:3:3:sys:/dev:/usr/sbin/nologin
+sync:4:65534:sync:/bin:/bin/sync
+games:5:60:games:/usr/games:/usr/sbin/nologin
+man:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:8:8:mail:/var/mail:/usr/sbin/nologin
+news:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:34:34:backup:/var/backups:/usr/sbin/nologin
+list:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:39:39:ircd:/run/ircd:/usr/sbin/nologin
+_apt:42:65534::/nonexistent:/usr/sbin/nologin
+nobody:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+systemd-network:998:998:systemd Network Management:/:/usr/sbin/nologin
+dhcpcd:100:65534:DHCP Client Daemon:/usr/lib/dhcpcd:/bin/false
+messagebus:991:991:System Message Bus:/nonexistent:/usr/sbin/nologin
+systemd-timesync:990:990:systemd Time Synchronization:/:/usr/sbin/nologin
+sshd:989:65534:sshd user:/run/sshd:/usr/sbin/nologin
+lukasz:1000:1000:lukasz,,,:/home/lukasz:/usr/bin/zsh
+systemd-resolve:988:988:systemd Resolver:/:/usr/sbin/nologin
+dnsmasq:987:65534:dnsmasq:/var/lib/misc:/usr/sbin/nologin
+polkitd:986:986:User for polkitd:/:/usr/sbin/nologin
+borg:1001:1001::/home/borg:/bin/bash
+tcpdump:101:104::/nonexistent:/usr/sbin/nologin
+mysql:102:105:MariaDB Server:/nonexistent:/bin/false
+prosody:103:108:Prosody XMPP Server:/var/lib/prosody:/usr/sbin/nologin
+uuidd:104:109::/run/uuidd:/usr/sbin/nologin
+usbmux:105:46:usbmux daemon:/var/lib/usbmux:/usr/sbin/nologin
+prometheus:107:111:Prometheus daemon:/var/lib/prometheus:/usr/sbin/nologin
+grafana:108:112::/usr/share/grafana:/bin/false
+msmtp:106:110::/var/lib/msmtp:/usr/sbin/nologin
+postfix:109:113:Postfix MTA:/var/spool/postfix:/usr/sbin/nologin
+tss:110:116:TPM software stack:/var/lib/tpm:/bin/false
+fwupd-refresh:985:985:Firmware update daemon:/var/lib/fwupd:/usr/sbin/nologin
+lufi:999:987::/srv/lufi:/usr/sbin/nologin
+ice:111:117:Ice Service account:/var/lib/ice:/usr/sbin/nologin
+mumble-server:112:118::/var/lib/mumble-server:/usr/sbin/nologin
+avahi:113:119:Avahi mDNS daemon:/run/avahi-daemon:/usr/sbin/nologin
+unbound:114:120::/var/lib/unbound:/usr/sbin/nologin
+loki:115:65534::/nonexistent:/bin/false
+promtail:116:65534::/nonexistent:/bin/false
+alloy:997:984:alloy user:/var/lib/alloy:/sbin/nologin
+debian-tor:117:121::/var/lib/tor:/bin/false
+i2pd:118:122::/var/lib/i2pd:/usr/sbin/nologin
+gopher:119:123::/var/gopher:/usr/sbin/nologin

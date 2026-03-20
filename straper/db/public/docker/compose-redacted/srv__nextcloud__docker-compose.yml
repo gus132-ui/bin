@@ -1,0 +1,36 @@
+services:
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    environment:
+      MYSQL_ROOT_PASSWORD: strongrootpw
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: ncuser
+      MYSQL_PASSWORD: strongdbpw
+    volumes:
+      - /srv/nextcloud/db:/var/lib/mysql
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+  app:
+    image: nextcloud:33-apache
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:9091:80"
+    environment:
+      MYSQL_HOST: db
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: ncuser
+      MYSQL_PASSWORD: strongdbpw
+      REDIS_HOST: redis
+      PHP_MEMORY_LIMIT: 1024M
+      PHP_UPLOAD_LIMIT: 2G
+    volumes:
+      - /srv/nextcloud/html:/var/www/html
+    depends_on:
+      - db
+      - redis
+

@@ -14,17 +14,23 @@ Rebuild time: weeks → hours. All risky changes are explicit, reversible, and t
 
 ```
 ~/.local/bin/straper/
-├── capture-full.sh      Capture live server state into a rebuild DB
-├── lint-db.sh           Validate DB shape before trusting it for restore
-├── install-base.sh      Install packages and baseline — no identity transplant
-├── restore-configs.sh   Restore config categories from DB, one at a time
+├── capture-full.sh      Capture live server state into db/
+├── lint-db.sh           Validate DB shape before restore
+├── install-base.sh      Install packages and baseline
+├── restore-configs.sh   Restore config categories from DB
 ├── doctor.sh            Read-only health and readiness checks
 ├── rebuild.conf.example Optional config overrides
-└── lib/
-    └── common.sh        Shared helpers, restore_path(), report(), etc.
+├── .gitignore           Excludes db/secret/ from git
+├── lib/
+│   └── common.sh        Shared helpers, restore_path(), report()
+└── db/                  Rebuild database (auto-created by capture-full.sh)
+    ├── public/          Unencrypted inventory — git-tracked
+    └── secret/          Root-only (chmod 700) — never committed
 ```
 
-Runtime artifacts go to `/var/log/labunix-rebuild/` and `/var/lib/labunix-rebuild/`.
+The toolkit is **self-contained** — `capture-full.sh` writes the DB to `db/` inside the toolkit directory. No external paths needed.
+
+Runtime artifacts: `/var/log/labunix-rebuild/` and `/var/lib/labunix-rebuild/`.
 
 ---
 
@@ -44,18 +50,16 @@ Runtime artifacts go to `/var/log/labunix-rebuild/` and `/var/lib/labunix-rebuil
 
 ```bash
 sudo ~/.local/bin/straper/capture-full.sh
-# or to a specific path:
-sudo CAPTURE_DIR=/tmp/sanctum-rebuild-clean ~/.local/bin/straper/capture-full.sh
 ```
 
-Produces `db/public/` (safe, git-tracked) and `db/secret/` (root-only, never committed).
+Writes to `~/.local/bin/straper/db/public/` and `db/secret/`. Run after any significant change.
 
 ### Step 2 — Lint
 
 Always lint before restore. Do not proceed if lint fails.
 
 ```bash
-sudo ~/.local/bin/straper/lint-db.sh --db-dir /tmp/sanctum-rebuild-clean
+sudo ~/.local/bin/straper/lint-db.sh
 ```
 
 Catches: nested duplicate roots, overlapping captures, backup junk, duplicate canonical files.
@@ -64,17 +68,18 @@ Catches: nested duplicate roots, overlapping captures, backup junk, duplicate ca
 
 ```bash
 rsync -av ~/.local/bin/straper/ lukasz@TARGET:~/rebuild-test/sanctum-rebuild-toolkit/
-rsync -av /tmp/sanctum-rebuild-clean/db/ lukasz@TARGET:~/sanctum-rebuild/db/
 ```
+
+Both toolkit and DB are transferred in one rsync — they live in the same directory.
 
 ### Step 4 — Install base
 
 ```bash
 cd ~/rebuild-test/sanctum-rebuild-toolkit
-sudo bash ./install-base.sh --role lab --profile core
+sudo bash ./install-base.sh --role hardware --profile core
 ```
 
-Installs packages, sets up baseline, stops conflicting services. Does **not** restore any config.
+Installs packages (including Grafana repo setup, Docker, dns-root-data), sets up baseline, stops conflicting services. Does **not** restore any config.
 
 ### Step 5 — Restore categories
 
@@ -83,8 +88,7 @@ Restore in blocks. Run `doctor.sh` after each block.
 **Safe first block:**
 ```bash
 sudo bash ./restore-configs.sh \
-  --db-dir ~/sanctum-rebuild \
-  --role lab \
+  --role hardware --yes \
   --category system-basics \
   --category users \
   --category ssh
@@ -93,8 +97,7 @@ sudo bash ./restore-configs.sh \
 **Service block:**
 ```bash
 sudo bash ./restore-configs.sh \
-  --db-dir ~/sanctum-rebuild \
-  --role lab \
+  --role hardware --yes \
   --category nginx \
   --category mariadb \
   --category postfix \
@@ -105,10 +108,16 @@ sudo bash ./restore-configs.sh \
   --category i2pd
 ```
 
-**Risky block** (use `--role hardware` or `--role replacement`, run last):
+**TLS:**
 ```bash
 sudo bash ./restore-configs.sh \
-  --db-dir ~/sanctum-rebuild \
+  --role hardware --yes \
+  --category tls
+```
+
+**Risky block (run last):**
+```bash
+sudo bash ./restore-configs.sh \
   --role hardware \
   --category dns \
   --category firewall \
@@ -118,40 +127,39 @@ sudo bash ./restore-configs.sh \
 ### Step 6 — Verify
 
 ```bash
-sudo bash ./doctor.sh --db-dir ~/sanctum-rebuild --role hardware
+sudo bash ./doctor.sh --role hardware
 ```
 
 ---
 
 ## Smart adaptive restore
 
-`dns`, `firewall`, and `network` are not naive file copies — they adapt to the target machine.
+`dns`, `firewall`, and `network` adapt to the target machine rather than blindly copying files.
 
 ### DNS (`restore_dns`)
 
 1. Scans live interfaces, IPs, WireGuard ifaces, Docker bridges, port 53 owner
-2. Adapts `dnsmasq.conf` and all `dnsmasq.d/*` — strips non-live IPs from `listen-address`, comments out `interface=` lines for absent interfaces
-3. Classifies each file: `safe` | `dormant-wireguard` | `dormant-docker` | `dormant-hardware`
-4. Fetches `root.hints` from internic.net if referenced by unbound config
-5. Disables DNSSEC validator for bootstrap (re-enable manually once stable)
-6. Disables `systemd-resolved` stub listener if it would conflict with dnsmasq
+2. Adapts `dnsmasq.conf` and `dnsmasq.d/*` — strips non-live IPs, comments out absent `interface=` lines
+3. Installs `dns-root-data` if missing, runs `unbound-helper` to seed trust anchor
+4. Disables DNSSEC validator for bootstrap (re-enable after system stable)
+5. Disables `systemd-resolved` stub if it conflicts with dnsmasq
+6. Fetches `root.hints` from internic.net **after** DNS is confirmed working
 7. Starts unbound → dnsmasq in correct order, verifies each is listening
-8. Writes `/etc/resolv.conf` **only after** resolution is confirmed — falls back to `1.1.1.1` if not
+8. Writes `/etc/resolv.conf` only after resolution is confirmed
 9. Prints precise manual task list
 
-WireGuard-dependent and Docker-dependent rules are preserved as dormant comments — they activate automatically when those interfaces come up.
+WireGuard and Docker rules are preserved as dormant comments — activate automatically when those interfaces come up.
 
 ### Firewall (`restore_firewall`)
 
 1. Scans live interfaces
-2. Adapts `nftables.conf` — comments out rules referencing absent interfaces
-3. Classifies: `wg*` → dormant-wireguard, `enx*/eth*` → dormant-hardware-nic, `br-*/docker0` → dormant-docker (collapsed to one task)
-4. Validates with `nft -c` before loading
-5. Loads with `nft -f`, enables `nftables.service`
+2. Comments out rules referencing absent interfaces (`wg0`, `enx*`, `br-*`/`docker0`)
+3. Validates with `nft -c`, loads with `nft -f`, enables and starts `nftables.service`
+4. Docker bridge rules collapsed to single manual task
 
 ### Network (`restore_network`)
 
-Restores `/etc/network`, `systemd-network`, `nsswitch.conf`, `hosts.allow/deny`. Skipped in `lab` role.
+Restores `/etc/network`, `systemd-network`, `nsswitch.conf`, `hosts.allow/deny`. Refreshes postfix chroot after nsswitch restore. Skipped in `lab` role.
 
 ---
 
@@ -159,21 +167,21 @@ Restores `/etc/network`, `systemd-network`, `nsswitch.conf`, `hosts.allow/deny`.
 
 ```
 system-basics → users → ssh
-nginx → mariadb → postfix → prosody → docker → monitoring → tor → i2pd
+nginx → mariadb → postfix → prosody → docker → monitoring → tor → i2pd → tls
 dns → firewall → network
 ```
 
-DNS must come before firewall. Network last. Run `doctor.sh` after each block.
+DNS before firewall. Network last. TLS before DNS (nginx needs certs to start).
 
 ---
 
 ## Validated doctor baseline (hardware role)
 
 ```
-Summary: ok=22 warn=7 fail=0 manual=1
+Summary: ok=27 warn=2 fail=0 manual=1
 ```
 
-Expected warnings in lab: `kvm` detected, `nftables` inactive before first boot, `docker`/`grafana` not installed, `tor`/`i2pd` not started, DNS chain intentional.
+Expected permanent warnings: `kvm` (VM only), DNS chain intentional.
 
 ---
 
@@ -182,16 +190,17 @@ Expected warnings in lab: `kvm` detected, `nftables` inactive before first boot,
 | Category | Risk | Notes |
 |----------|------|-------|
 | `system-basics` | low | hostname, hosts, locale, timezone |
-| `users` | low | sudoers with ownership fix, shells, login.defs |
+| `users` | low | sudoers with ownership fix, shells |
 | `ssh` | low | sshd_config; host keys in hardware/replacement only |
-| `nginx` | low | lab: default site only, no production vhosts |
+| `nginx` | low | lab: default site only; enables service |
 | `mariadb` | low | /etc/mysql tree with normalization |
-| `postfix` | low | main.cf, master.cf with explicit root:root ownership |
+| `postfix` | low | main.cf, master.cf; enables and starts service |
 | `prosody` | low | tree + cert permission normalization |
-| `docker` | low | daemon.json; compose files are manual |
+| `docker` | low | daemon.json; adds user to docker group |
 | `monitoring` | low | prometheus, loki, grafana, alloy trees |
 | `tor` | low | torrc; /var/lib/tor only in replacement role |
 | `i2pd` | low | /etc/i2pd tree; /var/lib/i2pd only in replacement role |
+| `tls` | low | letsencrypt certs from secret DB; reloads nginx |
 | `dns` | **risky** | smart adaptive — see above |
 | `firewall` | **risky** | smart adaptive — see above |
 | `network` | **risky** | skipped in lab |
@@ -200,19 +209,21 @@ Expected warnings in lab: `kvm` detected, `nftables` inactive before first boot,
 
 ## Known lessons
 
-**Metadata matters.** Content restore alone is not enough — owner, group, and mode must be normalized. `restore_path()` handles this.
+**Metadata matters.** Content restore alone is not enough — owner, group, mode must be normalized. `restore_path()` handles this.
 
 **DB shape matters.** A polluted DB produces bad restores even with correct logic. Always lint first.
 
-**Tree restores are overlay-style.** On a reused VM, stale files survive. Use a fresh VM or clean the destination before retesting.
+**Tree restores are overlay-style.** Use a fresh VM or clean the destination before retesting.
 
-**resolv.conf is sacred.** Never write it until a local resolver is confirmed listening.
+**resolv.conf is sacred.** Never write it until a local resolver is confirmed listening. `install-base.sh` always writes a static file (breaking the systemd-resolved symlink) at bootstrap time.
 
-**DNSSEC on Debian 13.** `unbound-anchor` is not shipped. Disable the validator module for initial bring-up; re-enable after the system is stable.
+**DNSSEC on Debian 13.** `unbound-anchor` is not shipped — use `dns-root-data` package + `unbound-helper`. Disable validator module for initial bring-up; re-enable after stable.
 
-**Service start order.** unbound must be listening before dnsmasq starts — dnsmasq validates its `server=` upstream at startup and exits with `INVALIDARGUMENT` if it can't reach it.
+**Service start order.** unbound must be listening before dnsmasq starts.
 
 **nftables interface references.** Rules referencing absent interfaces must be commented out or nftables refuses to load entirely.
+
+**Docker on Debian.** `docker.io` ships v1 compose (`docker-compose`), not the v2 plugin (`docker compose`). Use `docker-compose` or install `docker-compose-plugin` separately.
 
 ---
 
@@ -220,30 +231,30 @@ Expected warnings in lab: `kvm` detected, `nftables` inactive before first boot,
 
 `db/public/` — unencrypted, git-tracked. Safe for remote backup.
 
-`db/secret/` — root-only (`chmod 700`), never committed. Protected at rest by ZFS-on-LUKS. Contains SSH keys, TLS private keys, WireGuard keys, LUKS headers, service secrets.
+`db/secret/` — root-only (`chmod 700`), excluded by `.gitignore`. Protected at rest by ZFS-on-LUKS. Contains SSH keys, TLS private keys, WireGuard keys, LUKS headers, service secrets.
 
 ---
 
 ## Quick reference
 
 ```bash
-# Capture
+# Capture (self-contained — writes to db/ in toolkit dir)
 sudo ~/.local/bin/straper/capture-full.sh
 
 # Lint
-sudo ~/.local/bin/straper/lint-db.sh --db-dir /srv/sanctum-rebuild
+sudo ~/.local/bin/straper/lint-db.sh
+
+# Transfer toolkit + DB to target in one rsync
+rsync -av ~/.local/bin/straper/ lukasz@TARGET:~/rebuild-test/sanctum-rebuild-toolkit/
 
 # Install
 sudo bash ./install-base.sh --role hardware --profile core
 
-# Restore (example)
-sudo bash ./restore-configs.sh \
-  --db-dir ~/sanctum-rebuild \
-  --role hardware \
-  --category dns
+# Restore (non-interactive)
+sudo bash ./restore-configs.sh --role hardware --yes --category dns
 
 # Verify
-sudo bash ./doctor.sh --db-dir ~/sanctum-rebuild --role hardware
+sudo bash ./doctor.sh --role hardware
 
 # List categories
 sudo bash ./restore-configs.sh --list-categories
@@ -253,5 +264,6 @@ sudo bash ./restore-configs.sh --list-categories
 
 ## Status
 
-All restore categories validated including risky (`dns`, `firewall`, `network`).
+All 15 restore categories validated including risky (`dns`, `firewall`, `network`).
+Validated doctor baseline: `ok=27 warn=2 fail=0`.
 Suitable for: structured lab testing, staged hardware migration, disciplined disaster-recovery rehearsal.

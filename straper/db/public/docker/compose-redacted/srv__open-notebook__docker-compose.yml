@@ -1,0 +1,32 @@
+services:
+  surrealdb:
+    image: surrealdb/surrealdb:v2
+    command: start --log info --user root --pass ee0ec0b6ca61534509d1880d23dab8796118aacbf77456351ccee488f333931f rocksdb:/mydata/mydatabase.db
+    user: root
+    #ports:
+    #  - "8000:8000"
+    volumes:
+      - ./surreal_data:/mydata
+    restart: always
+
+  open_notebook:
+    image: lfnovo/open_notebook:v1-latest
+    ports:
+      - "127.0.0.1:8502:8502"
+      - "127.0.0.1:5055:5055"
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    environment:
+      - OPEN_NOTEBOOK_ENCRYPTION_KEY=1e22bc51aa104737bd520aba73359e458c72264a3da37b2b9e4df7d188327d75
+      - SURREAL_URL=ws://surrealdb:8000/rpc
+      - SURREAL_USER=root
+      - SURREAL_PASSWORD=<REDACTED>
+      - SURREAL_NAMESPACE=open_notebook
+      - SURREAL_DATABASE=open_notebook
+    volumes:
+      - ./notebook_data:/app/data
+      - /srv/open-notebook/gai.conf:/etc/gai.conf:ro
+    depends_on:
+      - surrealdb
+    restart: always

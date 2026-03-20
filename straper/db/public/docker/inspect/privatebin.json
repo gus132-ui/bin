@@ -1,0 +1,291 @@
+{
+  "Id": "a5427aebe224a96ccfc99845fbd4525ac556bb7f57904c38c83df6fd497bb461",
+  "Created": "2026-03-13T12:42:10.932734581Z",
+  "Path": "/etc/init.d/rc.local",
+  "Args": [],
+  "State": {
+    "Status": "running",
+    "Running": true,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 1845790,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-03-13T12:42:11.796597775Z",
+    "FinishedAt": "0001-01-01T00:00:00Z"
+  },
+  "Image": "sha256:aa8a812538f9138487f4cc522944eba28212bc8545673bc3bc4b1f9973815ec0",
+  "ResolvConfPath": "/var/lib/docker/containers/a5427aebe224a96ccfc99845fbd4525ac556bb7f57904c38c83df6fd497bb461/resolv.conf",
+  "HostnamePath": "/var/lib/docker/containers/a5427aebe224a96ccfc99845fbd4525ac556bb7f57904c38c83df6fd497bb461/hostname",
+  "HostsPath": "/var/lib/docker/containers/a5427aebe224a96ccfc99845fbd4525ac556bb7f57904c38c83df6fd497bb461/hosts",
+  "LogPath": "/var/lib/docker/containers/a5427aebe224a96ccfc99845fbd4525ac556bb7f57904c38c83df6fd497bb461/a5427aebe224a96ccfc99845fbd4525ac556bb7f57904c38c83df6fd497bb461-json.log",
+  "Name": "/privatebin",
+  "RestartCount": 0,
+  "Driver": "overlayfs",
+  "Platform": "linux",
+  "MountLabel": "",
+  "ProcessLabel": "",
+  "AppArmorProfile": "docker-default",
+  "ExecIDs": null,
+  "HostConfig": {
+    "Binds": [
+      "/srv/privatebin/data:/srv/data:rw",
+      "/srv/privatebin/cfg/conf.php:/srv/cfg/conf.php:ro"
+    ],
+    "ContainerIDFile": "",
+    "LogConfig": {
+      "Type": "json-file",
+      "Config": {}
+    },
+    "NetworkMode": "privatebin_web",
+    "PortBindings": {
+      "8080/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "8081"
+        }
+      ]
+    },
+    "RestartPolicy": {
+      "Name": "unless-stopped",
+      "MaximumRetryCount": 0
+    },
+    "AutoRemove": false,
+    "VolumeDriver": "",
+    "VolumesFrom": null,
+    "ConsoleSize": [
+      0,
+      0
+    ],
+    "CapAdd": null,
+    "CapDrop": null,
+    "CgroupnsMode": "private",
+    "Dns": null,
+    "DnsOptions": null,
+    "DnsSearch": null,
+    "ExtraHosts": [],
+    "GroupAdd": null,
+    "IpcMode": "private",
+    "Cgroup": "",
+    "Links": null,
+    "OomScoreAdj": 0,
+    "PidMode": "",
+    "Privileged": false,
+    "PublishAllPorts": false,
+    "ReadonlyRootfs": true,
+    "SecurityOpt": null,
+    "Tmpfs": {
+      "/tmp": "",
+      "/var/tmp": ""
+    },
+    "UTSMode": "",
+    "UsernsMode": "",
+    "ShmSize": 67108864,
+    "Runtime": "runc",
+    "Isolation": "",
+    "CpuShares": 0,
+    "Memory": 0,
+    "NanoCpus": 0,
+    "CgroupParent": "",
+    "BlkioWeight": 0,
+    "BlkioWeightDevice": null,
+    "BlkioDeviceReadBps": null,
+    "BlkioDeviceWriteBps": null,
+    "BlkioDeviceReadIOps": null,
+    "BlkioDeviceWriteIOps": null,
+    "CpuPeriod": 0,
+    "CpuQuota": 0,
+    "CpuRealtimePeriod": 0,
+    "CpuRealtimeRuntime": 0,
+    "CpusetCpus": "",
+    "CpusetMems": "",
+    "Devices": null,
+    "DeviceCgroupRules": null,
+    "DeviceRequests": null,
+    "MemoryReservation": 0,
+    "MemorySwap": 0,
+    "MemorySwappiness": null,
+    "OomKillDisable": null,
+    "PidsLimit": null,
+    "Ulimits": null,
+    "CpuCount": 0,
+    "CpuPercent": 0,
+    "IOMaximumIOps": 0,
+    "IOMaximumBandwidth": 0,
+    "Mounts": [
+      {
+        "Type": "volume",
+        "Source": "f05486b814b076d7d64e790b7d5ad05e0d0cab4536a0f67db21250973380ffc1",
+        "Target": "/var/lib/nginx/tmp"
+      },
+      {
+        "Type": "volume",
+        "Source": "29d5cea757b97aa12bd8085a6edaaf23ebfd2c45a1ae3678d3a8f8bb8826d269",
+        "Target": "/run"
+      }
+    ],
+    "MaskedPaths": [
+      "/proc/acpi",
+      "/proc/asound",
+      "/proc/interrupts",
+      "/proc/kcore",
+      "/proc/keys",
+      "/proc/latency_stats",
+      "/proc/sched_debug",
+      "/proc/scsi",
+      "/proc/timer_list",
+      "/proc/timer_stats",
+      "/sys/devices/virtual/powercap",
+      "/sys/firmware",
+      "/sys/devices/system/cpu/cpu0/thermal_throttle",
+      "/sys/devices/system/cpu/cpu1/thermal_throttle",
+      "/sys/devices/system/cpu/cpu2/thermal_throttle",
+      "/sys/devices/system/cpu/cpu3/thermal_throttle"
+    ],
+    "ReadonlyPaths": [
+      "/proc/bus",
+      "/proc/fs",
+      "/proc/irq",
+      "/proc/sys",
+      "/proc/sysrq-trigger"
+    ]
+  },
+  "Storage": {
+    "RootFS": {
+      "Snapshot": {
+        "Name": "overlayfs"
+      }
+    }
+  },
+  "Mounts": [
+    {
+      "Type": "bind",
+      "Source": "/srv/privatebin/cfg/conf.php",
+      "Destination": "/srv/cfg/conf.php",
+      "Mode": "ro",
+      "RW": false,
+      "Propagation": "rprivate"
+    },
+    {
+      "Type": "volume",
+      "Name": "f05486b814b076d7d64e790b7d5ad05e0d0cab4536a0f67db21250973380ffc1",
+      "Source": "/var/lib/docker/volumes/f05486b814b076d7d64e790b7d5ad05e0d0cab4536a0f67db21250973380ffc1/_data",
+      "Destination": "/var/lib/nginx/tmp",
+      "Driver": "local",
+      "Mode": "z",
+      "RW": true,
+      "Propagation": ""
+    },
+    {
+      "Type": "volume",
+      "Name": "29d5cea757b97aa12bd8085a6edaaf23ebfd2c45a1ae3678d3a8f8bb8826d269",
+      "Source": "/var/lib/docker/volumes/29d5cea757b97aa12bd8085a6edaaf23ebfd2c45a1ae3678d3a8f8bb8826d269/_data",
+      "Destination": "/run",
+      "Driver": "local",
+      "Mode": "z",
+      "RW": true,
+      "Propagation": ""
+    },
+    {
+      "Type": "bind",
+      "Source": "/srv/privatebin/data",
+      "Destination": "/srv/data",
+      "Mode": "rw",
+      "RW": true,
+      "Propagation": "rprivate"
+    }
+  ],
+  "Config": {
+    "Hostname": "a5427aebe224",
+    "Domainname": "",
+    "User": "65534:82",
+    "AttachStdin": false,
+    "AttachStdout": true,
+    "AttachStderr": true,
+    "ExposedPorts": {
+      "8080/tcp": {}
+    },
+    "Tty": false,
+    "OpenStdin": false,
+    "StdinOnce": false,
+    "Cmd": null,
+    "Image": "privatebin/nginx-fpm-alpine:latest",
+    "Volumes": {
+      "/run": {},
+      "/srv/data": {},
+      "/tmp": {},
+      "/var/lib/nginx/tmp": {}
+    },
+    "WorkingDir": "/var/www",
+    "Entrypoint": [
+      "/etc/init.d/rc.local"
+    ],
+    "Labels": {
+      "com.docker.compose.config-hash": "810437023df2646654a9f8c4fae0bbb88c0ec5579b71c5b53c9e0d684dc7ae1d",
+      "com.docker.compose.container-number": "1",
+      "com.docker.compose.depends_on": "",
+      "com.docker.compose.image": "sha256:aa8a812538f9138487f4cc522944eba28212bc8545673bc3bc4b1f9973815ec0",
+      "com.docker.compose.oneoff": "False",
+      "com.docker.compose.project": "privatebin",
+      "com.docker.compose.project.config_files": "/srv/privatebin/docker-compose.yml",
+      "com.docker.compose.project.working_dir": "/srv/privatebin",
+      "com.docker.compose.replace": "privatebin",
+      "com.docker.compose.service": "privatebin",
+      "com.docker.compose.version": "5.1.0",
+      "org.opencontainers.image.authors": "support@privatebin.org",
+      "org.opencontainers.image.documentation": "https://github.com/PrivateBin/docker-nginx-fpm-alpine/blob/master/README.md",
+      "org.opencontainers.image.licenses": "zlib-acknowledgement",
+      "org.opencontainers.image.source": "https://github.com/PrivateBin/docker-nginx-fpm-alpine",
+      "org.opencontainers.image.vendor": "PrivateBin",
+      "org.opencontainers.image.version": "2.0.3"
+    }
+  },
+  "NetworkSettings": {
+    "SandboxID": "271b9e20ad7f850f15c3c5dbee6cc18771aa4315888535cdadd51c722847a9a1",
+    "SandboxKey": "/var/run/docker/netns/271b9e20ad7f",
+    "Ports": {
+      "8080/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "8081"
+        }
+      ]
+    },
+    "Networks": {
+      "privatebin_web": {
+        "IPAMConfig": null,
+        "Links": null,
+        "Aliases": [
+          "privatebin",
+          "privatebin"
+        ],
+        "DriverOpts": null,
+        "GwPriority": 0,
+        "NetworkID": "454eb7778b0a6c791dfaeb70889aeb8dd4416c1e4f2669f78c5056d948cd8ccd",
+        "EndpointID": "591b9e4787128a1bafbf2c31ea1b2783d7869db84e3385c3ca203409ec47e27f",
+        "Gateway": "172.19.0.1",
+        "IPAddress": "172.19.0.2",
+        "MacAddress": "36:41:da:c9:8f:0d",
+        "IPPrefixLen": 16,
+        "IPv6Gateway": "",
+        "GlobalIPv6Address": "",
+        "GlobalIPv6PrefixLen": 0,
+        "DNSNames": [
+          "privatebin",
+          "a5427aebe224"
+        ]
+      }
+    }
+  },
+  "ImageManifestDescriptor": {
+    "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+    "digest": "sha256:32435b7cd57827d6867a68e40e84061fb4155444348a2513f8af7699cc1e0502",
+    "size": 1285,
+    "platform": {
+      "architecture": "amd64",
+      "os": "linux"
+    }
+  }
+}

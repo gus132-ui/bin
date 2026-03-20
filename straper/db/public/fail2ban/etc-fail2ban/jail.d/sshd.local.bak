@@ -1,0 +1,5 @@
+[sshd]
+enabled = true
+backend = systemd
+filter = sshd-session-preauth
+action = nftables-multiport

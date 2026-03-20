@@ -1,0 +1,7 @@
+               Local time: Fri 2026-03-20 16:27:47 CET
+           Universal time: Fri 2026-03-20 15:27:47 UTC
+                 RTC time: Fri 2026-03-20 15:27:47
+                Time zone: Europe/Warsaw (CET, +0100)
+System clock synchronized: yes
+              NTP service: active
+          RTC in local TZ: no

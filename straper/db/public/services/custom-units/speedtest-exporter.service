@@ -1,0 +1,13 @@
+[Unit]
+Description=Prometheus Speedtest Exporter
+After=network.target
+
+[Service]
+Type=simple
+User=lukasz
+ExecStart=/usr/bin/python3 -m prometheus_speedtest.prometheus_speedtest
+Environment=PYTHONPATH=/home/lukasz/.local/lib/python3.13/site-packages
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

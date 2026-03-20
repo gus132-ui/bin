@@ -935,6 +935,9 @@ EOF
   elif $resolution_ok; then
     log "dns: writing /etc/resolv.conf..."
 
+    # Remove immutable flag if set by install-base bootstrap
+    chattr -i /etc/resolv.conf 2>/dev/null || true
+
     # Back up current resolv.conf before touching it
     backup_target /etc/resolv.conf >/dev/null 2>&1 || true
 
@@ -956,6 +959,7 @@ EOF
   else
     # Resolution failed — write a safe fallback, mark resolv.conf as manual
     log "dns: resolution not confirmed — writing fallback resolv.conf (1.1.1.1)"
+    chattr -i /etc/resolv.conf 2>/dev/null || true
     backup_target /etc/resolv.conf >/dev/null 2>&1 || true
     [[ -L /etc/resolv.conf ]] && rm -f /etc/resolv.conf
     printf '# fallback — local resolver did not come up cleanly\n# replace with: nameserver 127.0.0.1 once dnsmasq is running\nnameserver 1.1.1.1\nnameserver 9.9.9.9\n' \

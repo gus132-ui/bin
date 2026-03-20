@@ -1,0 +1,33 @@
+Saving debug log to /var/log/letsencrypt/letsencrypt.log
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Found the following certs:
+  Certificate Name: chat.labunix.xyz
+    Serial Number: 51c9aa098aadeaaf0715e337d0f56ecead8
+    Key Type: ECDSA
+    Domains: chat.labunix.xyz
+    Expiry Date: 2026-06-15 08:02:58+00:00 (VALID: 86 days)
+    Certificate Path: /etc/letsencrypt/live/chat.labunix.xyz/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/chat.labunix.xyz/privkey.pem
+  Certificate Name: labunix.xyz
+    Serial Number: 577cac1ddd7171ee4abc5c64ed067af6580
+    Key Type: ECDSA
+    Domains: labunix.xyz *.labunix.xyz
+    Expiry Date: 2026-06-15 08:06:40+00:00 (VALID: 86 days)
+    Certificate Path: /etc/letsencrypt/live/labunix.xyz/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/labunix.xyz/privkey.pem
+  Certificate Name: pad.labunix.xyz
+    Serial Number: 6fd3f255d57acaa91b48a22de15c02fc5ca
+    Key Type: ECDSA
+    Domains: pad.labunix.xyz pad-sandbox.labunix.xyz
+    Expiry Date: 2026-06-15 08:09:34+00:00 (VALID: 86 days)
+    Certificate Path: /etc/letsencrypt/live/pad.labunix.xyz/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/pad.labunix.xyz/privkey.pem
+  Certificate Name: voice.labunix.xyz
+    Serial Number: 66b176690b044490fe2ff0bf9f91b03867b
+    Key Type: ECDSA
+    Domains: voice.labunix.xyz
+    Expiry Date: 2026-06-15 08:10:19+00:00 (VALID: 86 days)
+    Certificate Path: /etc/letsencrypt/live/voice.labunix.xyz/fullchain.pem
+    Private Key Path: /etc/letsencrypt/live/voice.labunix.xyz/privkey.pem
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

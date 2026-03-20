@@ -1,0 +1,304 @@
+{
+  "Id": "729fc0d46552426a8fc6ff0797422b0db1f583ce3559c11239e0ce0ec648f8be",
+  "Created": "2026-02-16T08:52:01.213483788Z",
+  "Path": "docker-entrypoint.sh",
+  "Args": [
+    "pnpm",
+    "run",
+    "prod"
+  ],
+  "State": {
+    "Status": "running",
+    "Running": true,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 2274021,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-03-06T21:10:01.7585775Z",
+    "FinishedAt": "2026-03-06T21:09:59.883318812Z",
+    "Health": {
+      "Status": "healthy",
+      "FailingStreak": 0,
+      "Log": [
+        {
+          "Start": "2026-03-20T16:27:28.502532066+01:00",
+          "End": "2026-03-20T16:27:28.574560723+01:00",
+          "ExitCode": 0,
+          "Output": ""
+        },
+        {
+          "Start": "2026-03-20T16:27:33.575642811+01:00",
+          "End": "2026-03-20T16:27:33.652209184+01:00",
+          "ExitCode": 0,
+          "Output": ""
+        },
+        {
+          "Start": "2026-03-20T16:27:38.653358656+01:00",
+          "End": "2026-03-20T16:27:38.722115172+01:00",
+          "ExitCode": 0,
+          "Output": ""
+        },
+        {
+          "Start": "2026-03-20T16:27:43.723013312+01:00",
+          "End": "2026-03-20T16:27:43.79379898+01:00",
+          "ExitCode": 0,
+          "Output": ""
+        },
+        {
+          "Start": "2026-03-20T16:27:48.794707841+01:00",
+          "End": "2026-03-20T16:27:48.848505521+01:00",
+          "ExitCode": 0,
+          "Output": ""
+        }
+      ]
+    }
+  },
+  "Image": "sha256:69a697fe6bf75aecf8748d734bcca5f0e596a6eeec8342ab030d0da8a6f224d5",
+  "ResolvConfPath": "/var/lib/docker/containers/729fc0d46552426a8fc6ff0797422b0db1f583ce3559c11239e0ce0ec648f8be/resolv.conf",
+  "HostnamePath": "/var/lib/docker/containers/729fc0d46552426a8fc6ff0797422b0db1f583ce3559c11239e0ce0ec648f8be/hostname",
+  "HostsPath": "/var/lib/docker/containers/729fc0d46552426a8fc6ff0797422b0db1f583ce3559c11239e0ce0ec648f8be/hosts",
+  "LogPath": "/var/lib/docker/containers/729fc0d46552426a8fc6ff0797422b0db1f583ce3559c11239e0ce0ec648f8be/729fc0d46552426a8fc6ff0797422b0db1f583ce3559c11239e0ce0ec648f8be-json.log",
+  "Name": "/etherpad",
+  "RestartCount": 0,
+  "Driver": "overlayfs",
+  "Platform": "linux",
+  "MountLabel": "",
+  "ProcessLabel": "",
+  "AppArmorProfile": "docker-default",
+  "ExecIDs": null,
+  "HostConfig": {
+    "Binds": [
+      "/srv/etherpad/data:/opt/etherpad-lite/var:rw",
+      "/srv/etherpad/data/settings.json:/opt/etherpad-lite/settings.json:ro"
+    ],
+    "ContainerIDFile": "",
+    "LogConfig": {
+      "Type": "json-file",
+      "Config": {}
+    },
+    "NetworkMode": "etherpad_default",
+    "PortBindings": {
+      "9001/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "9001"
+        }
+      ]
+    },
+    "RestartPolicy": {
+      "Name": "unless-stopped",
+      "MaximumRetryCount": 0
+    },
+    "AutoRemove": false,
+    "VolumeDriver": "",
+    "VolumesFrom": null,
+    "ConsoleSize": [
+      0,
+      0
+    ],
+    "CapAdd": null,
+    "CapDrop": null,
+    "CgroupnsMode": "private",
+    "Dns": [],
+    "DnsOptions": [],
+    "DnsSearch": [],
+    "ExtraHosts": [],
+    "GroupAdd": null,
+    "IpcMode": "private",
+    "Cgroup": "",
+    "Links": null,
+    "OomScoreAdj": 0,
+    "PidMode": "",
+    "Privileged": false,
+    "PublishAllPorts": false,
+    "ReadonlyRootfs": false,
+    "SecurityOpt": null,
+    "UTSMode": "",
+    "UsernsMode": "",
+    "ShmSize": 67108864,
+    "Runtime": "runc",
+    "Isolation": "",
+    "CpuShares": 0,
+    "Memory": 0,
+    "NanoCpus": 0,
+    "CgroupParent": "",
+    "BlkioWeight": 0,
+    "BlkioWeightDevice": null,
+    "BlkioDeviceReadBps": null,
+    "BlkioDeviceWriteBps": null,
+    "BlkioDeviceReadIOps": null,
+    "BlkioDeviceWriteIOps": null,
+    "CpuPeriod": 0,
+    "CpuQuota": 0,
+    "CpuRealtimePeriod": 0,
+    "CpuRealtimeRuntime": 0,
+    "CpusetCpus": "",
+    "CpusetMems": "",
+    "Devices": null,
+    "DeviceCgroupRules": null,
+    "DeviceRequests": null,
+    "MemoryReservation": 0,
+    "MemorySwap": 0,
+    "MemorySwappiness": null,
+    "OomKillDisable": null,
+    "PidsLimit": null,
+    "Ulimits": null,
+    "CpuCount": 0,
+    "CpuPercent": 0,
+    "IOMaximumIOps": 0,
+    "IOMaximumBandwidth": 0,
+    "MaskedPaths": [
+      "/proc/acpi",
+      "/proc/asound",
+      "/proc/interrupts",
+      "/proc/kcore",
+      "/proc/keys",
+      "/proc/latency_stats",
+      "/proc/sched_debug",
+      "/proc/scsi",
+      "/proc/timer_list",
+      "/proc/timer_stats",
+      "/sys/devices/virtual/powercap",
+      "/sys/firmware",
+      "/sys/devices/system/cpu/cpu0/thermal_throttle",
+      "/sys/devices/system/cpu/cpu1/thermal_throttle",
+      "/sys/devices/system/cpu/cpu2/thermal_throttle",
+      "/sys/devices/system/cpu/cpu3/thermal_throttle"
+    ],
+    "ReadonlyPaths": [
+      "/proc/bus",
+      "/proc/fs",
+      "/proc/irq",
+      "/proc/sys",
+      "/proc/sysrq-trigger"
+    ]
+  },
+  "Storage": {
+    "RootFS": {
+      "Snapshot": {
+        "Name": "overlayfs"
+      }
+    }
+  },
+  "Mounts": [
+    {
+      "Type": "bind",
+      "Source": "/srv/etherpad/data/settings.json",
+      "Destination": "/opt/etherpad-lite/settings.json",
+      "Mode": "ro",
+      "RW": false,
+      "Propagation": "rprivate"
+    },
+    {
+      "Type": "bind",
+      "Source": "/srv/etherpad/data",
+      "Destination": "/opt/etherpad-lite/var",
+      "Mode": "rw",
+      "RW": true,
+      "Propagation": "rprivate"
+    }
+  ],
+  "Config": {
+    "Hostname": "729fc0d46552",
+    "Domainname": "",
+    "User": "etherpad",
+    "AttachStdin": false,
+    "AttachStdout": true,
+    "AttachStderr": true,
+    "ExposedPorts": {
+      "9001/tcp": {}
+    },
+    "Tty": false,
+    "OpenStdin": false,
+    "StdinOnce": false,
+    "Cmd": [
+      "pnpm",
+      "run",
+      "prod"
+    ],
+    "Healthcheck": {
+      "Test": [
+        "CMD-SHELL",
+        "curl --silent http://localhost:9001/health | grep -E \"pass|ok|up\" > /dev/null || exit 1"
+      ],
+      "Interval": 5000000000,
+      "Timeout": 3000000000
+    },
+    "Image": "etherpad/etherpad:latest",
+    "Volumes": null,
+    "WorkingDir": "/opt/etherpad-lite",
+    "Entrypoint": [
+      "docker-entrypoint.sh"
+    ],
+    "Labels": {
+      "com.docker.compose.config-hash": "6589d62ee702623f6c8042a13184977c028a3726807eb2450fcbac8a99457ccc",
+      "com.docker.compose.container-number": "1",
+      "com.docker.compose.depends_on": "",
+      "com.docker.compose.image": "sha256:69a697fe6bf75aecf8748d734bcca5f0e596a6eeec8342ab030d0da8a6f224d5",
+      "com.docker.compose.oneoff": "False",
+      "com.docker.compose.project": "etherpad",
+      "com.docker.compose.project.config_files": "/srv/etherpad/docker-compose.yml",
+      "com.docker.compose.project.working_dir": "/srv/etherpad",
+      "com.docker.compose.service": "etherpad",
+      "com.docker.compose.version": "5.0.2",
+      "maintainer": "Etherpad team, https://github.com/ether/etherpad-lite",
+      "org.opencontainers.image.created": "2026-01-26T21:40:29.858Z",
+      "org.opencontainers.image.description": "Etherpad: A modern really-real-time collaborative document editor.",
+      "org.opencontainers.image.licenses": "Apache-2.0",
+      "org.opencontainers.image.revision": "fad0297ced2c02152cee0905ee1ecf89ff78b208",
+      "org.opencontainers.image.source": "https://github.com/ether/etherpad-lite",
+      "org.opencontainers.image.title": "etherpad-lite",
+      "org.opencontainers.image.url": "https://github.com/ether/etherpad-lite",
+      "org.opencontainers.image.version": "2.6.1"
+    }
+  },
+  "NetworkSettings": {
+    "SandboxID": "9312cab66074b6a2cb4a1a447f3e6acd4e65078953d645ee2e43a77a19ba79ab",
+    "SandboxKey": "/var/run/docker/netns/9312cab66074",
+    "Ports": {
+      "9001/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "9001"
+        }
+      ]
+    },
+    "Networks": {
+      "etherpad_default": {
+        "IPAMConfig": null,
+        "Links": null,
+        "Aliases": [
+          "etherpad",
+          "etherpad"
+        ],
+        "DriverOpts": null,
+        "GwPriority": 0,
+        "NetworkID": "7ad976d6055e78e29da273cce97a4be700cf8452847c549e0358fbb82723658e",
+        "EndpointID": "be84ee0d322ef697d9b230bcb09fade9494f6794d294d36d04238c84336d1bd5",
+        "Gateway": "172.25.0.1",
+        "IPAddress": "172.25.0.2",
+        "MacAddress": "ee:78:ee:9a:a3:b2",
+        "IPPrefixLen": 16,
+        "IPv6Gateway": "",
+        "GlobalIPv6Address": "",
+        "GlobalIPv6PrefixLen": 0,
+        "DNSNames": [
+          "etherpad",
+          "729fc0d46552"
+        ]
+      }
+    }
+  },
+  "ImageManifestDescriptor": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:d95beaeb2741edd1fc09d50a224dc4963f637be4f7aa561b4302d7474f59907f",
+    "size": 4650,
+    "platform": {
+      "architecture": "amd64",
+      "os": "linux"
+    }
+  }
+}

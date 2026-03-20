@@ -1,0 +1,326 @@
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host noprefixroute 
+       valid_lft forever preferred_lft forever
+    RX:   bytes  packets errors dropped  missed   mcast           
+    39641662321 39789564      0       0       0       0 
+    TX:   bytes  packets errors dropped carrier collsns           
+    39641662321 39789564      0       0       0       0 
+2: enx00e04c2e4828: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 00:e0:4c:2e:48:28 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.33.5/24 brd 192.168.33.255 scope global dynamic enx00e04c2e4828
+       valid_lft 72175sec preferred_lft 72175sec
+    inet6 fe80::2e0:4cff:fe2e:4828/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:    bytes   packets errors dropped  missed   mcast           
+    299179854730 237371241      0       3       0       0 
+    TX:    bytes   packets errors dropped carrier collsns           
+    119275437202 115654007      0       4       0       0 
+3: wg0: <POINTOPOINT,NOARP,UP,LOWER_UP> mtu 1280 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/none 
+    inet 10.50.0.1/24 scope global wg0
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     781874568 5228202      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+    7724347128 7943815      0      12       0       0 
+4: br-454eb7778b0a: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 1e:1f:83:5d:69:97 brd ff:ff:ff:ff:ff:ff
+    inet 172.19.0.1/16 brd 172.19.255.255 scope global br-454eb7778b0a
+       valid_lft forever preferred_lft forever
+    inet6 fe80::1c1f:83ff:fe5d:6997/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     476869315  208302      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+      30595637  267528      0      12       0       0 
+5: docker0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc noqueue state DOWN group default 
+    link/ether 86:96:62:1e:52:72 brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+             0       0      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+             0       0      0      14       0       0 
+6: br-7ad976d6055e: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 42:2d:6b:f0:4f:03 brd ff:ff:ff:ff:ff:ff
+    inet 172.25.0.1/16 brd 172.25.255.255 scope global br-7ad976d6055e
+       valid_lft forever preferred_lft forever
+    inet6 fe80::402d:6bff:fef0:4f03/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     116837568   73079      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+       9186971   94122      0      10       0       0 
+7: br-bebca6296b94: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether be:9f:77:b2:09:a0 brd ff:ff:ff:ff:ff:ff
+    inet 172.24.0.1/16 brd 172.24.255.255 scope global br-bebca6296b94
+       valid_lft forever preferred_lft forever
+    inet6 fe80::bc9f:77ff:feb2:9a0/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+      82910110  104133      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+      14576793  109876      0      34       0       0 
+8: br-de49ada7ecfc: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 26:05:5a:59:d6:05 brd ff:ff:ff:ff:ff:ff
+    inet 172.21.0.1/16 brd 172.21.255.255 scope global br-de49ada7ecfc
+       valid_lft forever preferred_lft forever
+    inet6 fe80::2405:5aff:fe59:d605/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     220807386  161571      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+     101140280  182181      0       8       0       0 
+9: br-ed53bc5d2155: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether ea:ef:98:ff:d4:63 brd ff:ff:ff:ff:ff:ff
+    inet 172.20.0.1/16 brd 172.20.255.255 scope global br-ed53bc5d2155
+       valid_lft forever preferred_lft forever
+    inet6 fe80::e8ef:98ff:feff:d463/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     336673378  159499      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+      19413287  159401      0      13       0       0 
+10: br-07462fa2c80e: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether ae:65:9d:83:40:12 brd ff:ff:ff:ff:ff:ff
+    inet 172.18.0.1/16 brd 172.18.255.255 scope global br-07462fa2c80e
+       valid_lft forever preferred_lft forever
+    inet6 fe80::ac65:9dff:fe83:4012/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     113803111   94161      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+      52936686  123733      0      15       0       0 
+35: br-3d1818651f84: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 96:8b:1e:7f:9e:41 brd ff:ff:ff:ff:ff:ff
+    inet 172.26.0.1/16 brd 172.26.255.255 scope global br-3d1818651f84
+       valid_lft forever preferred_lft forever
+    inet6 fe80::948b:1eff:fe7f:9e41/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     466303145  110858      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+    1788154479  190082      0      17       0       0 
+50: veth66b38ed@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-de49ada7ecfc state UP group default 
+    link/ether be:8d:2c:e1:cf:ec brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet6 fe80::bc8d:2cff:fee1:cfec/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+      64616134  620319      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+     110894956  782833      0       0       0       0 
+52: veth9c73d9a@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-de49ada7ecfc state UP group default 
+    link/ether 12:64:d9:99:93:04 brd ff:ff:ff:ff:ff:ff link-netnsid 2
+    inet6 fe80::1064:d9ff:fe99:9304/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     310724471  482301      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+     102456888  595300      0       0       0       0 
+57: veth2d37ca4@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-7ad976d6055e state UP group default 
+    link/ether 3e:47:3b:c5:1d:65 brd ff:ff:ff:ff:ff:ff link-netnsid 7
+    inet6 fe80::3c47:3bff:fec5:1d65/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     117708413   73006      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+       9196349   94355      0       0       0       0 
+58: vethadf0147@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-de49ada7ecfc state UP group default 
+    link/ether 4a:6d:d4:87:a9:c0 brd ff:ff:ff:ff:ff:ff link-netnsid 8
+    inet6 fe80::486d:d4ff:fe87:a9c0/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     435411047 1533816      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+     475114877 1280088      0       0       0       0 
+59: br-0a3c12139db8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 0e:f1:a4:d6:7e:f5 brd ff:ff:ff:ff:ff:ff
+    inet 172.23.0.1/16 brd 172.23.255.255 scope global br-0a3c12139db8
+       valid_lft forever preferred_lft forever
+    inet6 fe80::cf1:a4ff:fed6:7ef5/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+       2323091     449      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+         99312     645      0       7       0       0 
+60: vethe44e43b@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-0a3c12139db8 state UP group default 
+    link/ether f6:c8:79:2d:17:19 brd ff:ff:ff:ff:ff:ff link-netnsid 9
+    inet6 fe80::f4c8:79ff:fe2d:1719/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     223175342 3145829      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+     752462607 2690307      0       0       0       0 
+61: veth2d9a05c@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-0a3c12139db8 state UP group default 
+    link/ether 0e:4e:22:ac:bd:d5 brd ff:ff:ff:ff:ff:ff link-netnsid 10
+    inet6 fe80::c4e:22ff:feac:bdd5/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     136968318  593879      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+     154825898  697369      0       0       0       0 
+65: veth5a5bd34@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-bebca6296b94 state UP group default 
+    link/ether 76:70:39:94:20:6a brd ff:ff:ff:ff:ff:ff link-netnsid 11
+    inet6 fe80::7470:39ff:fe94:206a/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+      84367930  104132      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+      14600518  110183      0       0       0       0 
+69: veth9939416@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-0a3c12139db8 state UP group default 
+    link/ether 9e:10:6e:1c:9d:1a brd ff:ff:ff:ff:ff:ff link-netnsid 12
+    inet6 fe80::9c10:6eff:fe1c:9d1a/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     741858881 2764073      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+     293830810 3052326      0       0       0       0 
+82: vethb69c728@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-3d1818651f84 state UP group default 
+    link/ether 8a:23:b7:94:ff:df brd ff:ff:ff:ff:ff:ff link-netnsid 1
+    inet6 fe80::8823:b7ff:fe94:ffdf/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     186279773   12513      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+       2351748   11551      0       0       0       0 
+83: veth8cde6c3@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-3d1818651f84 state UP group default 
+    link/ether 12:15:7f:03:16:60 brd ff:ff:ff:ff:ff:ff link-netnsid 3
+    inet6 fe80::1015:7fff:fe03:1660/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     150762241   63511      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+    1219839494  106387      0       0       0       0 
+84: br-e2d8a9eac20e: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether f2:41:cf:30:d1:3d brd ff:ff:ff:ff:ff:ff
+    inet 172.22.0.1/16 brd 172.22.255.255 scope global br-e2d8a9eac20e
+       valid_lft forever preferred_lft forever
+    inet6 fe80::f041:cfff:fe30:d13d/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+    1783041792 2483124      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+    1771063609 2734494      0       2       0       0 
+85: veth54b383d@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-e2d8a9eac20e state UP group default 
+    link/ether ee:ba:5e:0a:27:a1 brd ff:ff:ff:ff:ff:ff link-netnsid 13
+    inet6 fe80::ecba:5eff:fe0a:27a1/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+    1817805080 2483116      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+    1771077661 2734692      0       0       0       0 
+91: br-13fd8ea97b94: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether f2:e6:d9:0f:4a:4b brd ff:ff:ff:ff:ff:ff
+    inet 172.27.0.1/16 brd 172.27.255.255 scope global br-13fd8ea97b94
+       valid_lft forever preferred_lft forever
+    inet6 fe80::f0e6:d9ff:fe0f:4a4b/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+      12030396   74173      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+      16540662   74607      0       2       0       0 
+92: veth4e0359a@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-13fd8ea97b94 state UP group default 
+    link/ether 7e:f7:c0:e8:56:43 brd ff:ff:ff:ff:ff:ff link-netnsid 14
+    inet6 fe80::7cf7:c0ff:fee8:5643/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     477543675  851556      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+     547583023 1578498      0       0       0       0 
+93: veth0fb753c@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-13fd8ea97b94 state UP group default 
+    link/ether 5a:c4:22:78:ad:92 brd ff:ff:ff:ff:ff:ff link-netnsid 15
+    inet6 fe80::58c4:22ff:fe78:ad92/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     560629559 1652414      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+     494094753  926333      0       0       0       0 
+103: vethedc28a4@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-07462fa2c80e state UP group default 
+    link/ether fe:98:ee:28:83:5e brd ff:ff:ff:ff:ff:ff link-netnsid 4
+    inet6 fe80::fc98:eeff:fe28:835e/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     110100278   89454      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+      49261211  117943      0       0       0       0 
+105: veth31a9d8b@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-454eb7778b0a state UP group default 
+    link/ether 92:7b:2e:0d:76:ba brd ff:ff:ff:ff:ff:ff link-netnsid 5
+    inet6 fe80::907b:2eff:fe0d:76ba/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     455262941  195412      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+      28328345  250441      0       0       0       0 
+107: veth4a4bf6a@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-ed53bc5d2155 state UP group default 
+    link/ether 02:ea:b2:c7:b0:ab brd ff:ff:ff:ff:ff:ff link-netnsid 6
+    inet6 fe80::ea:b2ff:fec7:b0ab/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+     284909397  138743      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+      12690450  139060      0       0       0       0 
+108: br-47a738184c2c: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 82:2c:75:b6:d0:ac brd ff:ff:ff:ff:ff:ff
+    inet 172.28.0.1/16 brd 172.28.255.255 scope global br-47a738184c2c
+       valid_lft forever preferred_lft forever
+    inet6 fe80::802c:75ff:feb6:d0ac/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+      61433835   74657      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+       9769530   77948      0       8       0       0 
+115: veth94d5d03@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-47a738184c2c state UP group default 
+    link/ether 3e:89:b0:16:c2:6d brd ff:ff:ff:ff:ff:ff link-netnsid 16
+    inet6 fe80::3c89:b0ff:fe16:c26d/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+      20155284   69971      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+       8353031   72893      0       0       0       0 
+116: br-ec92021c01d5: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether 4a:f2:d0:40:8c:6c brd ff:ff:ff:ff:ff:ff
+    inet 172.29.0.1/16 brd 172.29.255.255 scope global br-ec92021c01d5
+       valid_lft forever preferred_lft forever
+    inet6 fe80::48f2:d0ff:fe40:8c6c/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+       5954811    1490      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+        535608    1566      0       2       0       0 
+117: veth8eba08a@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-ec92021c01d5 state UP group default 
+    link/ether d6:5d:a5:f7:98:cb brd ff:ff:ff:ff:ff:ff link-netnsid 17
+    inet6 fe80::d45d:a5ff:fef7:98cb/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+        584738    1271      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+        470251    1800      0       0       0       0 
+118: veth70c1f3a@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-ec92021c01d5 state UP group default 
+    link/ether ce:08:90:9b:7f:e3 brd ff:ff:ff:ff:ff:ff link-netnsid 18
+    inet6 fe80::cc08:90ff:fe9b:7fe3/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+       6429974    3068      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+       1133299    3018      0       0       0       0 
+126: br-8f7fc81a0600: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default 
+    link/ether fa:3f:c2:a3:64:2d brd ff:ff:ff:ff:ff:ff
+    inet 172.30.0.1/16 brd 172.30.255.255 scope global br-8f7fc81a0600
+       valid_lft forever preferred_lft forever
+    inet6 fe80::f83f:c2ff:fea3:642d/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+      17883294   13807      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+       6406937   14994      0      14       0       0 
+139: vethda5b7a6@if2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue master br-8f7fc81a0600 state UP group default 
+    link/ether c2:5d:75:71:cf:45 brd ff:ff:ff:ff:ff:ff link-netnsid 19
+    inet6 fe80::c05d:75ff:fe71:cf45/64 scope link proto kernel_ll 
+       valid_lft forever preferred_lft forever
+    RX:  bytes packets errors dropped  missed   mcast           
+      12148524    6775      0       0       0       0 
+    TX:  bytes packets errors dropped carrier collsns           
+       5400996    7115      0       0       0       0 

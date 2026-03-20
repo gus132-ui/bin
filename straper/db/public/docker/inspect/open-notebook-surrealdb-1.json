@@ -1,0 +1,280 @@
+{
+  "Id": "12691eeac724c8cbfb02eb2475b10ff2b3c068688189fac8fc811e16220ad9b4",
+  "Created": "2026-03-09T11:35:07.936673906Z",
+  "Path": "/surreal",
+  "Args": [
+    "start",
+    "--log",
+    "info",
+    "--user",
+    "root",
+    "--pass",
+    "ee0ec0b6ca61534509d1880d23dab8796118aacbf77456351ccee488f333931f",
+    "rocksdb:/mydata/mydatabase.db"
+  ],
+  "State": {
+    "Status": "running",
+    "Running": true,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 3776302,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-03-09T11:35:10.269456349Z",
+    "FinishedAt": "0001-01-01T00:00:00Z"
+  },
+  "Image": "sha256:77e50f74944f73cc915133830dcc7eb81e76b8a6c065f7f853f364adaf3a945f",
+  "ResolvConfPath": "/var/lib/docker/containers/12691eeac724c8cbfb02eb2475b10ff2b3c068688189fac8fc811e16220ad9b4/resolv.conf",
+  "HostnamePath": "/var/lib/docker/containers/12691eeac724c8cbfb02eb2475b10ff2b3c068688189fac8fc811e16220ad9b4/hostname",
+  "HostsPath": "/var/lib/docker/containers/12691eeac724c8cbfb02eb2475b10ff2b3c068688189fac8fc811e16220ad9b4/hosts",
+  "LogPath": "/var/lib/docker/containers/12691eeac724c8cbfb02eb2475b10ff2b3c068688189fac8fc811e16220ad9b4/12691eeac724c8cbfb02eb2475b10ff2b3c068688189fac8fc811e16220ad9b4-json.log",
+  "Name": "/open-notebook-surrealdb-1",
+  "RestartCount": 0,
+  "Driver": "overlayfs",
+  "Platform": "linux",
+  "MountLabel": "",
+  "ProcessLabel": "",
+  "AppArmorProfile": "docker-default",
+  "ExecIDs": null,
+  "HostConfig": {
+    "Binds": [
+      "/srv/open-notebook/surreal_data:/mydata:rw"
+    ],
+    "ContainerIDFile": "",
+    "LogConfig": {
+      "Type": "json-file",
+      "Config": {}
+    },
+    "NetworkMode": "open-notebook_default",
+    "PortBindings": {},
+    "RestartPolicy": {
+      "Name": "always",
+      "MaximumRetryCount": 0
+    },
+    "AutoRemove": false,
+    "VolumeDriver": "",
+    "VolumesFrom": null,
+    "ConsoleSize": [
+      0,
+      0
+    ],
+    "CapAdd": null,
+    "CapDrop": null,
+    "CgroupnsMode": "private",
+    "Dns": null,
+    "DnsOptions": null,
+    "DnsSearch": null,
+    "ExtraHosts": [],
+    "GroupAdd": null,
+    "IpcMode": "private",
+    "Cgroup": "",
+    "Links": null,
+    "OomScoreAdj": 0,
+    "PidMode": "",
+    "Privileged": false,
+    "PublishAllPorts": false,
+    "ReadonlyRootfs": false,
+    "SecurityOpt": null,
+    "UTSMode": "",
+    "UsernsMode": "",
+    "ShmSize": 67108864,
+    "Runtime": "runc",
+    "Isolation": "",
+    "CpuShares": 0,
+    "Memory": 0,
+    "NanoCpus": 0,
+    "CgroupParent": "",
+    "BlkioWeight": 0,
+    "BlkioWeightDevice": null,
+    "BlkioDeviceReadBps": null,
+    "BlkioDeviceWriteBps": null,
+    "BlkioDeviceReadIOps": null,
+    "BlkioDeviceWriteIOps": null,
+    "CpuPeriod": 0,
+    "CpuQuota": 0,
+    "CpuRealtimePeriod": 0,
+    "CpuRealtimeRuntime": 0,
+    "CpusetCpus": "",
+    "CpusetMems": "",
+    "Devices": null,
+    "DeviceCgroupRules": null,
+    "DeviceRequests": null,
+    "MemoryReservation": 0,
+    "MemorySwap": 0,
+    "MemorySwappiness": null,
+    "OomKillDisable": null,
+    "PidsLimit": null,
+    "Ulimits": null,
+    "CpuCount": 0,
+    "CpuPercent": 0,
+    "IOMaximumIOps": 0,
+    "IOMaximumBandwidth": 0,
+    "Mounts": [
+      {
+        "Type": "volume",
+        "Source": "fe0d35e2d9756066f63ad6cbe2c06c2ad822c44c1349d3258b100120bd2027f1",
+        "Target": "/data"
+      },
+      {
+        "Type": "volume",
+        "Source": "40cf104fded7e2e45acb0810b0e4f5030cc6ab3784f081047b3037a4d742093a",
+        "Target": "/logs"
+      }
+    ],
+    "MaskedPaths": [
+      "/proc/acpi",
+      "/proc/asound",
+      "/proc/interrupts",
+      "/proc/kcore",
+      "/proc/keys",
+      "/proc/latency_stats",
+      "/proc/sched_debug",
+      "/proc/scsi",
+      "/proc/timer_list",
+      "/proc/timer_stats",
+      "/sys/devices/virtual/powercap",
+      "/sys/firmware",
+      "/sys/devices/system/cpu/cpu0/thermal_throttle",
+      "/sys/devices/system/cpu/cpu1/thermal_throttle",
+      "/sys/devices/system/cpu/cpu2/thermal_throttle",
+      "/sys/devices/system/cpu/cpu3/thermal_throttle"
+    ],
+    "ReadonlyPaths": [
+      "/proc/bus",
+      "/proc/fs",
+      "/proc/irq",
+      "/proc/sys",
+      "/proc/sysrq-trigger"
+    ]
+  },
+  "Storage": {
+    "RootFS": {
+      "Snapshot": {
+        "Name": "overlayfs"
+      }
+    }
+  },
+  "Mounts": [
+    {
+      "Type": "bind",
+      "Source": "/srv/open-notebook/surreal_data",
+      "Destination": "/mydata",
+      "Mode": "rw",
+      "RW": true,
+      "Propagation": "rprivate"
+    },
+    {
+      "Type": "volume",
+      "Name": "fe0d35e2d9756066f63ad6cbe2c06c2ad822c44c1349d3258b100120bd2027f1",
+      "Source": "/var/lib/docker/volumes/fe0d35e2d9756066f63ad6cbe2c06c2ad822c44c1349d3258b100120bd2027f1/_data",
+      "Destination": "/data",
+      "Driver": "local",
+      "Mode": "z",
+      "RW": true,
+      "Propagation": ""
+    },
+    {
+      "Type": "volume",
+      "Name": "40cf104fded7e2e45acb0810b0e4f5030cc6ab3784f081047b3037a4d742093a",
+      "Source": "/var/lib/docker/volumes/40cf104fded7e2e45acb0810b0e4f5030cc6ab3784f081047b3037a4d742093a/_data",
+      "Destination": "/logs",
+      "Driver": "local",
+      "Mode": "z",
+      "RW": true,
+      "Propagation": ""
+    }
+  ],
+  "Config": {
+    "Hostname": "12691eeac724",
+    "Domainname": "",
+    "User": "root",
+    "AttachStdin": false,
+    "AttachStdout": true,
+    "AttachStderr": true,
+    "Tty": false,
+    "OpenStdin": false,
+    "StdinOnce": false,
+    "Cmd": [
+      "start",
+      "--log",
+      "info",
+      "--user",
+      "root",
+      "--pass",
+      "ee0ec0b6ca61534509d1880d23dab8796118aacbf77456351ccee488f333931f",
+      "rocksdb:/mydata/mydatabase.db"
+    ],
+    "Image": "surrealdb/surrealdb:v2",
+    "Volumes": {
+      "/data": {},
+      "/logs": {}
+    },
+    "WorkingDir": "",
+    "Entrypoint": [
+      "/surreal"
+    ],
+    "Labels": {
+      "com.docker.compose.config-hash": "d687aeaf836bd0ff61dddc4f56eeed2a7144b036b87c56a5c50c6cc11f41d997",
+      "com.docker.compose.container-number": "1",
+      "com.docker.compose.depends_on": "",
+      "com.docker.compose.image": "sha256:77e50f74944f73cc915133830dcc7eb81e76b8a6c065f7f853f364adaf3a945f",
+      "com.docker.compose.oneoff": "False",
+      "com.docker.compose.project": "open-notebook",
+      "com.docker.compose.project.config_files": "/srv/open-notebook/docker-compose.yml",
+      "com.docker.compose.project.working_dir": "/srv/open-notebook",
+      "com.docker.compose.replace": "surrealdb-1",
+      "com.docker.compose.service": "surrealdb",
+      "com.docker.compose.version": "5.1.0",
+      "dev.chainguard.image.title": "glibc-dynamic",
+      "dev.chainguard.package.main": "",
+      "org.opencontainers.image.authors": "Chainguard Team https://www.chainguard.dev/",
+      "org.opencontainers.image.created": "2026-03-02T15:23:49Z",
+      "org.opencontainers.image.source": "https://github.com/chainguard-images/images/tree/main/images/glibc-dynamic",
+      "org.opencontainers.image.title": "glibc-dynamic",
+      "org.opencontainers.image.url": "https://images.chainguard.dev/directory/image/glibc-dynamic/overview",
+      "org.opencontainers.image.vendor": "Chainguard"
+    }
+  },
+  "NetworkSettings": {
+    "SandboxID": "d9b9a0deead40825a360a7cb5dab6e6f1d9a791e24a43fda8573f13dfb00fe6d",
+    "SandboxKey": "/var/run/docker/netns/d9b9a0deead4",
+    "Ports": {},
+    "Networks": {
+      "open-notebook_default": {
+        "IPAMConfig": null,
+        "Links": null,
+        "Aliases": [
+          "open-notebook-surrealdb-1",
+          "surrealdb"
+        ],
+        "DriverOpts": null,
+        "GwPriority": 0,
+        "NetworkID": "3d1818651f84760702c8326eb55a5ed00536d64b58bc5ed96bd9ba1c647041b8",
+        "EndpointID": "c3b13f2e10145b6dbcb340ba0fcf1fb6a12f2f99147571979659ed9a07a9d9c9",
+        "Gateway": "172.26.0.1",
+        "IPAddress": "172.26.0.2",
+        "MacAddress": "16:fd:de:5a:52:d9",
+        "IPPrefixLen": 16,
+        "IPv6Gateway": "",
+        "GlobalIPv6Address": "",
+        "GlobalIPv6PrefixLen": 0,
+        "DNSNames": [
+          "open-notebook-surrealdb-1",
+          "surrealdb",
+          "12691eeac724"
+        ]
+      }
+    }
+  },
+  "ImageManifestDescriptor": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:e2eff61b91ff1efe4c259742403b6ead575d64cf534ad3278918069a7eb0712f",
+    "size": 2189,
+    "platform": {
+      "architecture": "amd64",
+      "os": "linux"
+    }
+  }
+}

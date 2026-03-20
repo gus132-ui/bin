@@ -1,0 +1,376 @@
+{
+  "Id": "80f793993045b90529c415543bd9621032c093bfa9136d681f1737ab5366a20a",
+  "Created": "2026-03-09T08:29:03.711948224Z",
+  "Path": "/bin/bash",
+  "Args": [
+    "/cryptpad/docker-entrypoint.sh",
+    "npm",
+    "start"
+  ],
+  "State": {
+    "Status": "running",
+    "Running": true,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 3692065,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-03-09T08:29:03.898465617Z",
+    "FinishedAt": "0001-01-01T00:00:00Z",
+    "Health": {
+      "Status": "healthy",
+      "FailingStreak": 0,
+      "Log": [
+        {
+          "Start": "2026-03-20T16:23:23.372919099+01:00",
+          "End": "2026-03-20T16:23:23.434075425+01:00",
+          "ExitCode": 0,
+          "Output": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\r  0     0   0     0   0     0     0     0  --:--:-- --:--:-- --:--:--     0<!--\nSPDX-FileCopyrightText: 2023 XWiki CryptPad Team <contact@cryptpad.org> and contributors\n\nSPDX-License-Identifier: AGPL-3.0-or-later\n-->\n\n<!DOCTYPE html>\n<html>\n<!-- If this file is not called customize.dist/src/template.html, it is generated -->\n<head>\n    <title data-localization=\"main_title\">CryptPad: Collaboration suite, encrypted and open-source</title>\n    <meta property=\"og:url\" content=\"https://pad.labunix.xyz/index.html\">\n    <meta property=\"og:type\" content=\"website\">\n    <meta property=\"og:title\" content=\"CryptPad: end-to-end encrypted collaboration suite\">\n    <meta property=\"og:description\" content=\"CryptPad: end-to-end encrypted collaboration suite\">\n    <meta property=\"og:image\" content=\"https://pad.labunix.xyz/customize/images/opengraph_preview/og-default.png\">\n    <meta property=\"twitter:card\" content=\"summary_large_image\">\n    <meta content=\"text/html; charset=utf-8\" http-equiv=\"content-type\"/>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <link rel=\"icon\" type=\"image/png\" href=\"/customize/favicon/main-favicon.png\" id=\"favicon\"/>\n    <script src=\"/customize/pre-loading.js?ver=1773044944749\"></script>\n    <link href=\"/customize/src/pre-loading.css?ver=1773044944749\" rel=\"stylesheet\" type=\"text/css\">\n    <script async data-bootload=\"/customize/template.js\" data-main=\"/common/boot.js?ver=1.0\" src=\"/components/requirejs/require.js?ver=2.3.7\"></script>\n</head>\n<body class=\"html\">\n    <noscript>\n        <p class=\"noscript\">JavaScript must be enabled to perform encryption in your browser</p>\n        <p class=\"noscript\">يجب أن يكون جافاسكربت مُمَكن لتمكين التشفير في متصفحك</p>\n        <p class=\"noscript\">El JavaScript ha d'estar habilitat per a realitzar l'encriptatge al navegador</p>\n        <p class=\"noscript\">JavaScript muss aktiviert sein, um die Verschlüsselung in deinem Browser zu ermöglichen</p>\n        <p class=\"noscript\">JavaScript debe estar activado para realizar la encriptación en tu navegador</p>\n        <p class=\"noscript\">JavaScript debe estar habilitado para realizar la encriptación en tu navegador</p>\n        <p class=\"noscript\">JavaScript gaituta egon behar da zure nabigatzailean enkriptaketak egiteko</p>\n        <p class=\"noscript\">JavaScriptin tulee olla käytössä, jotta salaus on mahdollista tehdä selaimessa</p>\n        <p class=\"noscript\">JavaScript doit être activé pour effectuer le chiffrement dans votre navigateur</p>\n        <p class=\"noscript\">JavaScript harus diaktifkan untuk melakukan enkripsi dalam peramban Anda</p>\n        <p class=\"noscript\">JavaScript deve essere abilitato per eseguire la crittografia nel browser</p>\n        <p class=\"noscript\">ブラウザーで暗号化を行うにはJavaScriptが有効になっている必要があります</p>\n        <p class=\"noscript\">JavaScript moet ingeschakeld zijn om versleuteling in uw browser uit te voeren</p>\n        <p class=\"noscript\">JavaScript musi być włączony, aby wykonać szyfrowanie w przeglądarce</p>\n        <p class=\"noscript\">O JavaScript deve estar ativado para executar a criptografia em seu navegador</p>\n        <p class=\"noscript\">JavaScript trebuie să fie activat pentru a putea efectua criptarea în browser-ul dumneavoastră</p>\n        <p class=\"noscript\">Для выполнения шифрования в вашем браузере должен быть включен JavaScript</p>\n        <p class=\"noscript\">JavaScript måste vara aktiverat för att utföra kryptering i din webbläsare</p>\n        <p class=\"noscript\">Для виконання шифрування у вашому браузері має бути ввімкнено JavaScript</p>\n        <p class=\"noscript\">必须启用 JavaScript 才能在浏览器中进行加密</p>\n    </noscript>\n\r100  3821 100  3821   0     0  3986k    ..."
+        },
+        {
+          "Start": "2026-03-20T16:24:23.43462554+01:00",
+          "End": "2026-03-20T16:24:23.501099462+01:00",
+          "ExitCode": 0,
+          "Output": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\r  0     0   0     0   0     0     0     0  --:--:-- --:--:-- --:--:--     0\r100  3821 100  3821   0     0  4169k     0  --:--:-- --:--:-- --:--:--  3731k\n<!--\nSPDX-FileCopyrightText: 2023 XWiki CryptPad Team <contact@cryptpad.org> and contributors\n\nSPDX-License-Identifier: AGPL-3.0-or-later\n-->\n\n<!DOCTYPE html>\n<html>\n<!-- If this file is not called customize.dist/src/template.html, it is generated -->\n<head>\n    <title data-localization=\"main_title\">CryptPad: Collaboration suite, encrypted and open-source</title>\n    <meta property=\"og:url\" content=\"https://pad.labunix.xyz/index.html\">\n    <meta property=\"og:type\" content=\"website\">\n    <meta property=\"og:title\" content=\"CryptPad: end-to-end encrypted collaboration suite\">\n    <meta property=\"og:description\" content=\"CryptPad: end-to-end encrypted collaboration suite\">\n    <meta property=\"og:image\" content=\"https://pad.labunix.xyz/customize/images/opengraph_preview/og-default.png\">\n    <meta property=\"twitter:card\" content=\"summary_large_image\">\n    <meta content=\"text/html; charset=utf-8\" http-equiv=\"content-type\"/>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <link rel=\"icon\" type=\"image/png\" href=\"/customize/favicon/main-favicon.png\" id=\"favicon\"/>\n    <script src=\"/customize/pre-loading.js?ver=1773044944749\"></script>\n    <link href=\"/customize/src/pre-loading.css?ver=1773044944749\" rel=\"stylesheet\" type=\"text/css\">\n    <script async data-bootload=\"/customize/template.js\" data-main=\"/common/boot.js?ver=1.0\" src=\"/components/requirejs/require.js?ver=2.3.7\"></script>\n</head>\n<body class=\"html\">\n    <noscript>\n        <p class=\"noscript\">JavaScript must be enabled to perform encryption in your browser</p>\n        <p class=\"noscript\">يجب أن يكون جافاسكربت مُمَكن لتمكين التشفير في متصفحك</p>\n        <p class=\"noscript\">El JavaScript ha d'estar habilitat per a realitzar l'encriptatge al navegador</p>\n        <p class=\"noscript\">JavaScript muss aktiviert sein, um die Verschlüsselung in deinem Browser zu ermöglichen</p>\n        <p class=\"noscript\">JavaScript debe estar activado para realizar la encriptación en tu navegador</p>\n        <p class=\"noscript\">JavaScript debe estar habilitado para realizar la encriptación en tu navegador</p>\n        <p class=\"noscript\">JavaScript gaituta egon behar da zure nabigatzailean enkriptaketak egiteko</p>\n        <p class=\"noscript\">JavaScriptin tulee olla käytössä, jotta salaus on mahdollista tehdä selaimessa</p>\n        <p class=\"noscript\">JavaScript doit être activé pour effectuer le chiffrement dans votre navigateur</p>\n        <p class=\"noscript\">JavaScript harus diaktifkan untuk melakukan enkripsi dalam peramban Anda</p>\n        <p class=\"noscript\">JavaScript deve essere abilitato per eseguire la crittografia nel browser</p>\n        <p class=\"noscript\">ブラウザーで暗号化を行うにはJavaScriptが有効になっている必要があります</p>\n        <p class=\"noscript\">JavaScript moet ingeschakeld zijn om versleuteling in uw browser uit te voeren</p>\n        <p class=\"noscript\">JavaScript musi być włączony, aby wykonać szyfrowanie w przeglądarce</p>\n        <p class=\"noscript\">O JavaScript deve estar ativado para executar a criptografia em seu navegador</p>\n        <p class=\"noscript\">JavaScript trebuie să fie activat pentru a putea efectua criptarea în browser-ul dumneavoastră</p>\n        <p class=\"noscript\">Для выполнения шифрования в вашем браузере должен быть включен JavaScript</p>\n        <p class=\"noscript\">JavaScript måste vara aktiverat för att utföra kryptering i din webbläsare</p>\n        <p class=\"noscript\">Для виконання шифрування у вашому браузері має бути ввімкнено JavaScript</p>\n        <p class=\"noscript\">必须启用 JavaScript 才能在浏览�..."
+        },
+        {
+          "Start": "2026-03-20T16:25:23.502145691+01:00",
+          "End": "2026-03-20T16:25:23.579474576+01:00",
+          "ExitCode": 0,
+          "Output": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\r  0     0   0     0   0     0     0     0  --:--:-- --:--:-- --:--:--     0<!--\nSPDX-FileCopyrightText: 2023 XWiki CryptPad Team <contact@cryptpad.org> and contributors\n\nSPDX-License-Identifier: AGPL-3.0-or-later\n-->\n\n<!DOCTYPE html>\n<html>\n<!-- If this file is not called customize.dist/src/template.html, it is generated -->\n<head>\n    <title data-localization=\"main_title\">CryptPad: Collaboration suite, encrypted and open-source</title>\n    <meta property=\"og:url\" content=\"https://pad.labunix.xyz/index.html\">\n    <meta property=\"og:type\" content=\"website\">\n    <meta property=\"og:title\" content=\"CryptPad: end-to-end encrypted collaboration suite\">\n    <meta property=\"og:description\" content=\"CryptPad: end-to-end encrypted collaboration suite\">\n    <meta property=\"og:image\" content=\"https://pad.labunix.xyz/customize/images/opengraph_preview/og-default.png\">\n    <meta property=\"twitter:card\" content=\"summary_large_image\">\n    <meta content=\"text/html; charset=utf-8\" http-equiv=\"content-type\"/>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <link rel=\"icon\" type=\"image/png\" href=\"/customize/favicon/main-favicon.png\" id=\"favicon\"/>\n    <script src=\"/customize/pre-loading.js?ver=1773044944749\"></script>\n    <link href=\"/customize/src/pre-loading.css?ver=1773044944749\" rel=\"stylesheet\" type=\"text/css\">\n    <script async data-bootload=\"/customize/template.js\" data-main=\"/common/boot.js?ver=1.0\" src=\"/components/requirejs/require.js?ver=2.3.7\"></script>\n</head>\n<body class=\"html\">\n    <noscript>\n        <p class=\"noscript\">JavaScript must be enabled to perform encryption in your browser</p>\n        <p class=\"noscript\">يجب أن يكون جافاسكربت مُمَكن لتمكين التشفير في متصفحك</p>\n        <p class=\"noscript\">El JavaScript ha d'estar habilitat per a realitzar l'encriptatge al navegador</p>\n        <p class=\"noscript\">JavaScript muss aktiviert sein, um die Verschlüsselung in deinem Browser zu ermöglichen</p>\n        <p class=\"noscript\">JavaScript debe estar activado para realizar la encriptación en tu navegador</p>\n        <p class=\"noscript\">JavaScript debe estar habilitado para realizar la encriptación en tu navegador</p>\n        <p class=\"noscript\">JavaScript gaituta egon behar da zure nabigatzailean enkriptaketak egiteko</p>\n        <p class=\"noscript\">JavaScriptin tulee olla käytössä, jotta salaus on mahdollista tehdä selaimessa</p>\n        <p class=\"noscript\">JavaScript doit être activé pour effectuer le chiffrement dans votre navigateur</p>\n        <p class=\"noscript\">JavaScript harus diaktifkan untuk melakukan enkripsi dalam peramban Anda</p>\n        <p class=\"noscript\">JavaScript deve essere abilitato per eseguire la crittografia nel browser</p>\n        <p class=\"noscript\">ブラウザーで暗号化を行うにはJavaScriptが有効になっている必要があります</p>\n        <p class=\"noscript\">JavaScript moet ingeschakeld zijn om versleuteling in uw browser uit te voeren</p>\n        <p class=\"noscript\">JavaScript musi być włączony, aby wykonać szyfrowanie w przeglądarce</p>\n        <p class=\"noscript\">O JavaScript deve estar ativado para executar a criptografia em seu navegador</p>\n        <p class=\"noscript\">JavaScript trebuie să fie activat pentru a putea efectua criptarea în browser-ul dumneavoastră</p>\n        <p class=\"noscript\">Для выполнения шифрования в вашем браузере должен быть включен JavaScript</p>\n        <p class=\"noscript\">JavaScript måste vara aktiverat för att utföra kryptering i din webbläsare</p>\n        <p class=\"noscript\">Для виконання шифрування у вашому браузері має бути ввімкнено JavaScript</p>\n        <p class=\"noscript\">必须启用 JavaScript 才能在浏览器中进行加密</p>\n    </noscript>\n\r100  3821 100  3821   0     0  3919k    ..."
+        },
+        {
+          "Start": "2026-03-20T16:26:23.580045991+01:00",
+          "End": "2026-03-20T16:26:23.65999511+01:00",
+          "ExitCode": 0,
+          "Output": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\r  0     0   0     0   0     0     0     0  --:--:-- --:--:-- --:--:--     0<!--\nSPDX-FileCopyrightText: 2023 XWiki CryptPad Team <contact@cryptpad.org> and contributors\n\nSPDX-License-Identifier: AGPL-3.0-or-later\n-->\n\n<!DOCTYPE html>\n<html>\n<!-- If this file is not called customize.dist/src/template.html, it is generated -->\n<head>\n    <title data-localization=\"main_title\">CryptPad: Collaboration suite, encrypted and open-source</title>\n    <meta property=\"og:url\" content=\"https://pad.labunix.xyz/index.html\">\n    <meta property=\"og:type\" content=\"website\">\n    <meta property=\"og:title\" content=\"CryptPad: end-to-end encrypted collaboration suite\">\n    <meta property=\"og:description\" content=\"CryptPad: end-to-end encrypted collaboration suite\">\n    <meta property=\"og:image\" content=\"https://pad.labunix.xyz/customize/images/opengraph_preview/og-default.png\">\n    <meta property=\"twitter:card\" content=\"summary_large_image\">\n    <meta content=\"text/html; charset=utf-8\" http-equiv=\"content-type\"/>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <link rel=\"icon\" type=\"image/png\" href=\"/customize/favicon/main-favicon.png\" id=\"favicon\"/>\n    <script src=\"/customize/pre-loading.js?ver=1773044944749\"></script>\n    <link href=\"/customize/src/pre-loading.css?ver=1773044944749\" rel=\"stylesheet\" type=\"text/css\">\n    <script async data-bootload=\"/customize/template.js\" data-main=\"/common/boot.js?ver=1.0\" src=\"/components/requirejs/require.js?ver=2.3.7\"></script>\n</head>\n<body class=\"html\">\n    <noscript>\n        <p class=\"noscript\">JavaScript must be enabled to perform encryption in your browser</p>\n        <p class=\"noscript\">يجب أن يكون جافاسكربت مُمَكن لتمكين التشفير في متصفحك</p>\n        <p class=\"noscript\">El JavaScript ha d'estar habilitat per a realitzar l'encriptatge al navegador</p>\n        <p class=\"noscript\">JavaScript muss aktiviert sein, um die Verschlüsselung in deinem Browser zu ermöglichen</p>\n        <p class=\"noscript\">JavaScript debe estar activado para realizar la encriptación en tu navegador</p>\n        <p class=\"noscript\">JavaScript debe estar habilitado para realizar la encriptación en tu navegador</p>\n        <p class=\"noscript\">JavaScript gaituta egon behar da zure nabigatzailean enkriptaketak egiteko</p>\n        <p class=\"noscript\">JavaScriptin tulee olla käytössä, jotta salaus on mahdollista tehdä selaimessa</p>\n        <p class=\"noscript\">JavaScript doit être activé pour effectuer le chiffrement dans votre navigateur</p>\n        <p class=\"noscript\">JavaScript harus diaktifkan untuk melakukan enkripsi dalam peramban Anda</p>\n        <p class=\"noscript\">JavaScript deve essere abilitato per eseguire la crittografia nel browser</p>\n        <p class=\"noscript\">ブラウザーで暗号化を行うにはJavaScriptが有効になっている必要があります</p>\n        <p class=\"noscript\">JavaScript moet ingeschakeld zijn om versleuteling in uw browser uit te voeren</p>\n        <p class=\"noscript\">JavaScript musi być włączony, aby wykonać szyfrowanie w przeglądarce</p>\n        <p class=\"noscript\">O JavaScript deve estar ativado para executar a criptografia em seu navegador</p>\n        <p class=\"noscript\">JavaScript trebuie să fie activat pentru a putea efectua criptarea în browser-ul dumneavoastră</p>\n        <p class=\"noscript\">Для выполнения шифрования в вашем браузере должен быть включен JavaScript</p>\n        <p class=\"noscript\">JavaScript måste vara aktiverat för att utföra kryptering i din webbläsare</p>\n        <p class=\"noscript\">Для виконання шифрування у вашому браузері має бути ввімкнено JavaScript</p>\n        <p class=\"noscript\">必须启用 JavaScript 才能在浏览器中进行加密</p>\n    </noscript>\n\r100  3821 100  3821   0     0  4064k    ..."
+        },
+        {
+          "Start": "2026-03-20T16:27:23.660687447+01:00",
+          "End": "2026-03-20T16:27:23.735402777+01:00",
+          "ExitCode": 0,
+          "Output": "  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n\r  0     0   0     0   0     0     0     0  --:--:-- --:--:-- --:--:--     0\r100  3821 100  3821   0     0  4468k     0  --:--:-- --:--:-- --:--:--  3731k\n<!--\nSPDX-FileCopyrightText: 2023 XWiki CryptPad Team <contact@cryptpad.org> and contributors\n\nSPDX-License-Identifier: AGPL-3.0-or-later\n-->\n\n<!DOCTYPE html>\n<html>\n<!-- If this file is not called customize.dist/src/template.html, it is generated -->\n<head>\n    <title data-localization=\"main_title\">CryptPad: Collaboration suite, encrypted and open-source</title>\n    <meta property=\"og:url\" content=\"https://pad.labunix.xyz/index.html\">\n    <meta property=\"og:type\" content=\"website\">\n    <meta property=\"og:title\" content=\"CryptPad: end-to-end encrypted collaboration suite\">\n    <meta property=\"og:description\" content=\"CryptPad: end-to-end encrypted collaboration suite\">\n    <meta property=\"og:image\" content=\"https://pad.labunix.xyz/customize/images/opengraph_preview/og-default.png\">\n    <meta property=\"twitter:card\" content=\"summary_large_image\">\n    <meta content=\"text/html; charset=utf-8\" http-equiv=\"content-type\"/>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <link rel=\"icon\" type=\"image/png\" href=\"/customize/favicon/main-favicon.png\" id=\"favicon\"/>\n    <script src=\"/customize/pre-loading.js?ver=1773044944749\"></script>\n    <link href=\"/customize/src/pre-loading.css?ver=1773044944749\" rel=\"stylesheet\" type=\"text/css\">\n    <script async data-bootload=\"/customize/template.js\" data-main=\"/common/boot.js?ver=1.0\" src=\"/components/requirejs/require.js?ver=2.3.7\"></script>\n</head>\n<body class=\"html\">\n    <noscript>\n        <p class=\"noscript\">JavaScript must be enabled to perform encryption in your browser</p>\n        <p class=\"noscript\">يجب أن يكون جافاسكربت مُمَكن لتمكين التشفير في متصفحك</p>\n        <p class=\"noscript\">El JavaScript ha d'estar habilitat per a realitzar l'encriptatge al navegador</p>\n        <p class=\"noscript\">JavaScript muss aktiviert sein, um die Verschlüsselung in deinem Browser zu ermöglichen</p>\n        <p class=\"noscript\">JavaScript debe estar activado para realizar la encriptación en tu navegador</p>\n        <p class=\"noscript\">JavaScript debe estar habilitado para realizar la encriptación en tu navegador</p>\n        <p class=\"noscript\">JavaScript gaituta egon behar da zure nabigatzailean enkriptaketak egiteko</p>\n        <p class=\"noscript\">JavaScriptin tulee olla käytössä, jotta salaus on mahdollista tehdä selaimessa</p>\n        <p class=\"noscript\">JavaScript doit être activé pour effectuer le chiffrement dans votre navigateur</p>\n        <p class=\"noscript\">JavaScript harus diaktifkan untuk melakukan enkripsi dalam peramban Anda</p>\n        <p class=\"noscript\">JavaScript deve essere abilitato per eseguire la crittografia nel browser</p>\n        <p class=\"noscript\">ブラウザーで暗号化を行うにはJavaScriptが有効になっている必要があります</p>\n        <p class=\"noscript\">JavaScript moet ingeschakeld zijn om versleuteling in uw browser uit te voeren</p>\n        <p class=\"noscript\">JavaScript musi być włączony, aby wykonać szyfrowanie w przeglądarce</p>\n        <p class=\"noscript\">O JavaScript deve estar ativado para executar a criptografia em seu navegador</p>\n        <p class=\"noscript\">JavaScript trebuie să fie activat pentru a putea efectua criptarea în browser-ul dumneavoastră</p>\n        <p class=\"noscript\">Для выполнения шифрования в вашем браузере должен быть включен JavaScript</p>\n        <p class=\"noscript\">JavaScript måste vara aktiverat för att utföra kryptering i din webbläsare</p>\n        <p class=\"noscript\">Для виконання шифрування у вашому браузері має бути ввімкнено JavaScript</p>\n        <p class=\"noscript\">必须启用 JavaScript 才能在浏览�..."
+        }
+      ]
+    }
+  },
+  "Image": "sha256:4ec173673d8d7f69fe04fa1f3f72d529c05d5ae2d70c5a38f59fcfcdd523fad1",
+  "ResolvConfPath": "/var/lib/docker/containers/80f793993045b90529c415543bd9621032c093bfa9136d681f1737ab5366a20a/resolv.conf",
+  "HostnamePath": "/var/lib/docker/containers/80f793993045b90529c415543bd9621032c093bfa9136d681f1737ab5366a20a/hostname",
+  "HostsPath": "/var/lib/docker/containers/80f793993045b90529c415543bd9621032c093bfa9136d681f1737ab5366a20a/hosts",
+  "LogPath": "/var/lib/docker/containers/80f793993045b90529c415543bd9621032c093bfa9136d681f1737ab5366a20a/80f793993045b90529c415543bd9621032c093bfa9136d681f1737ab5366a20a-json.log",
+  "Name": "/cryptpad-cryptpad-1",
+  "RestartCount": 0,
+  "Driver": "overlayfs",
+  "Platform": "linux",
+  "MountLabel": "",
+  "ProcessLabel": "",
+  "AppArmorProfile": "docker-default",
+  "ExecIDs": null,
+  "HostConfig": {
+    "Binds": [
+      "/srv/cryptpad/data/block:/cryptpad/block:rw",
+      "/srv/cryptpad/customize:/cryptpad/customize:rw",
+      "/srv/cryptpad/data/data:/cryptpad/data:rw",
+      "/srv/cryptpad/onlyoffice-dist:/cryptpad/www/common/onlyoffice/dist:rw",
+      "/srv/cryptpad/onlyoffice-conf:/cryptpad/onlyoffice-conf:rw",
+      "/srv/cryptpad/config:/cryptpad/config:rw",
+      "/srv/cryptpad/data/files:/cryptpad/datastore:rw",
+      "/srv/cryptpad/data/blob:/cryptpad/blob:rw"
+    ],
+    "ContainerIDFile": "",
+    "LogConfig": {
+      "Type": "json-file",
+      "Config": {}
+    },
+    "NetworkMode": "cryptpad_default",
+    "PortBindings": {
+      "3000/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "3101"
+        }
+      ],
+      "3003/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "3103"
+        }
+      ]
+    },
+    "RestartPolicy": {
+      "Name": "unless-stopped",
+      "MaximumRetryCount": 0
+    },
+    "AutoRemove": false,
+    "VolumeDriver": "",
+    "VolumesFrom": null,
+    "ConsoleSize": [
+      0,
+      0
+    ],
+    "CapAdd": null,
+    "CapDrop": null,
+    "CgroupnsMode": "private",
+    "Dns": null,
+    "DnsOptions": null,
+    "DnsSearch": null,
+    "ExtraHosts": [],
+    "GroupAdd": null,
+    "IpcMode": "private",
+    "Cgroup": "",
+    "Links": null,
+    "OomScoreAdj": 0,
+    "PidMode": "",
+    "Privileged": false,
+    "PublishAllPorts": false,
+    "ReadonlyRootfs": false,
+    "SecurityOpt": null,
+    "UTSMode": "",
+    "UsernsMode": "",
+    "ShmSize": 67108864,
+    "Runtime": "runc",
+    "Isolation": "",
+    "CpuShares": 0,
+    "Memory": 0,
+    "NanoCpus": 0,
+    "CgroupParent": "",
+    "BlkioWeight": 0,
+    "BlkioWeightDevice": null,
+    "BlkioDeviceReadBps": null,
+    "BlkioDeviceWriteBps": null,
+    "BlkioDeviceReadIOps": null,
+    "BlkioDeviceWriteIOps": null,
+    "CpuPeriod": 0,
+    "CpuQuota": 0,
+    "CpuRealtimePeriod": 0,
+    "CpuRealtimeRuntime": 0,
+    "CpusetCpus": "",
+    "CpusetMems": "",
+    "Devices": null,
+    "DeviceCgroupRules": null,
+    "DeviceRequests": null,
+    "MemoryReservation": 0,
+    "MemorySwap": 0,
+    "MemorySwappiness": null,
+    "OomKillDisable": null,
+    "PidsLimit": null,
+    "Ulimits": [
+      {
+        "Name": "nofile",
+        "Hard": 1000000,
+        "Soft": 1000000
+      }
+    ],
+    "CpuCount": 0,
+    "CpuPercent": 0,
+    "IOMaximumIOps": 0,
+    "IOMaximumBandwidth": 0,
+    "MaskedPaths": [
+      "/proc/acpi",
+      "/proc/asound",
+      "/proc/interrupts",
+      "/proc/kcore",
+      "/proc/keys",
+      "/proc/latency_stats",
+      "/proc/sched_debug",
+      "/proc/scsi",
+      "/proc/timer_list",
+      "/proc/timer_stats",
+      "/sys/devices/virtual/powercap",
+      "/sys/firmware",
+      "/sys/devices/system/cpu/cpu0/thermal_throttle",
+      "/sys/devices/system/cpu/cpu1/thermal_throttle",
+      "/sys/devices/system/cpu/cpu2/thermal_throttle",
+      "/sys/devices/system/cpu/cpu3/thermal_throttle"
+    ],
+    "ReadonlyPaths": [
+      "/proc/bus",
+      "/proc/fs",
+      "/proc/irq",
+      "/proc/sys",
+      "/proc/sysrq-trigger"
+    ]
+  },
+  "Storage": {
+    "RootFS": {
+      "Snapshot": {
+        "Name": "overlayfs"
+      }
+    }
+  },
+  "Mounts": [
+    {
+      "Type": "bind",
+      "Source": "/srv/cryptpad/config",
+      "Destination": "/cryptpad/config",
+      "Mode": "rw",
+      "RW": true,
+      "Propagation": "rprivate"
+    },
+    {
+      "Type": "bind",
+      "Source": "/srv/cryptpad/data/files",
+      "Destination": "/cryptpad/datastore",
+      "Mode": "rw",
+      "RW": true,
+      "Propagation": "rprivate"
+    },
+    {
+      "Type": "bind",
+      "Source": "/srv/cryptpad/data/blob",
+      "Destination": "/cryptpad/blob",
+      "Mode": "rw",
+      "RW": true,
+      "Propagation": "rprivate"
+    },
+    {
+      "Type": "bind",
+      "Source": "/srv/cryptpad/data/block",
+      "Destination": "/cryptpad/block",
+      "Mode": "rw",
+      "RW": true,
+      "Propagation": "rprivate"
+    },
+    {
+      "Type": "bind",
+      "Source": "/srv/cryptpad/customize",
+      "Destination": "/cryptpad/customize",
+      "Mode": "rw",
+      "RW": true,
+      "Propagation": "rprivate"
+    },
+    {
+      "Type": "bind",
+      "Source": "/srv/cryptpad/data/data",
+      "Destination": "/cryptpad/data",
+      "Mode": "rw",
+      "RW": true,
+      "Propagation": "rprivate"
+    },
+    {
+      "Type": "bind",
+      "Source": "/srv/cryptpad/onlyoffice-dist",
+      "Destination": "/cryptpad/www/common/onlyoffice/dist",
+      "Mode": "rw",
+      "RW": true,
+      "Propagation": "rprivate"
+    },
+    {
+      "Type": "bind",
+      "Source": "/srv/cryptpad/onlyoffice-conf",
+      "Destination": "/cryptpad/onlyoffice-conf",
+      "Mode": "rw",
+      "RW": true,
+      "Propagation": "rprivate"
+    }
+  ],
+  "Config": {
+    "Hostname": "cryptpad",
+    "Domainname": "",
+    "User": "cryptpad",
+    "AttachStdin": false,
+    "AttachStdout": true,
+    "AttachStderr": true,
+    "ExposedPorts": {
+      "3000/tcp": {},
+      "3003/tcp": {}
+    },
+    "Tty": false,
+    "OpenStdin": false,
+    "StdinOnce": false,
+    "Cmd": [
+      "npm",
+      "start"
+    ],
+    "Healthcheck": {
+      "Test": [
+        "CMD-SHELL",
+        "curl -f http://localhost:3000/ || exit 1"
+      ],
+      "Interval": 60000000000
+    },
+    "Image": "cryptpad/cryptpad:latest",
+    "Volumes": {
+      "/cryptpad/blob": {},
+      "/cryptpad/block": {},
+      "/cryptpad/customize": {},
+      "/cryptpad/data": {},
+      "/cryptpad/datastore": {}
+    },
+    "WorkingDir": "/cryptpad",
+    "Entrypoint": [
+      "/bin/bash",
+      "/cryptpad/docker-entrypoint.sh"
+    ],
+    "Labels": {
+      "com.docker.compose.config-hash": "af44db6575c42f27884b92c9a59eb6320e76baadd64d4f918446db615f9109c9",
+      "com.docker.compose.container-number": "1",
+      "com.docker.compose.depends_on": "",
+      "com.docker.compose.image": "sha256:4ec173673d8d7f69fe04fa1f3f72d529c05d5ae2d70c5a38f59fcfcdd523fad1",
+      "com.docker.compose.oneoff": "False",
+      "com.docker.compose.project": "cryptpad",
+      "com.docker.compose.project.config_files": "/srv/cryptpad/docker-compose.yml",
+      "com.docker.compose.project.working_dir": "/srv/cryptpad",
+      "com.docker.compose.replace": "cryptpad-1",
+      "com.docker.compose.service": "cryptpad",
+      "com.docker.compose.version": "5.1.0"
+    },
+    "StopTimeout": 120
+  },
+  "NetworkSettings": {
+    "SandboxID": "a2a5278492c62cc93ed7030f5eca4f8f1ca76efdced20da1b81d24d725f67c64",
+    "SandboxKey": "/var/run/docker/netns/a2a5278492c6",
+    "Ports": {
+      "3000/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "3101"
+        }
+      ],
+      "3003/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "3103"
+        }
+      ]
+    },
+    "Networks": {
+      "cryptpad_default": {
+        "IPAMConfig": null,
+        "Links": null,
+        "Aliases": [
+          "cryptpad-cryptpad-1",
+          "cryptpad"
+        ],
+        "DriverOpts": null,
+        "GwPriority": 0,
+        "NetworkID": "bebca6296b949b74f9eaed7058748a907870a02ac3402cf497ba3394e8fdab41",
+        "EndpointID": "63f70ae89a4f36a42369a9e85b54bc4bfe1d9fbcd27812d87e4df8e9879f630a",
+        "Gateway": "172.24.0.1",
+        "IPAddress": "172.24.0.2",
+        "MacAddress": "76:c6:18:bd:a1:c6",
+        "IPPrefixLen": 16,
+        "IPv6Gateway": "",
+        "GlobalIPv6Address": "",
+        "GlobalIPv6PrefixLen": 0,
+        "DNSNames": [
+          "cryptpad-cryptpad-1",
+          "cryptpad",
+          "80f793993045"
+        ]
+      }
+    }
+  },
+  "ImageManifestDescriptor": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:fc35e3a609ea1577d09c1afcd8cb0704bc27ebed5535682ac91053693b108a20",
+    "size": 2191,
+    "platform": {
+      "architecture": "amd64",
+      "os": "linux"
+    }
+  }
+}

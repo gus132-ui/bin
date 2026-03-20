@@ -1,0 +1,4 @@
+#!/bin/sh
+df -hP | awk '$5+0 >= 90 {print}' | \
+mail -s "Disk usage warning on $(hostname)" root
+

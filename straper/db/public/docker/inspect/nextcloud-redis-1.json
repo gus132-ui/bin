@@ -1,0 +1,247 @@
+{
+  "Id": "eb223aa2789f988c1da02d973b29d46a5f96bcdfcce5eeebcb6cac756804e7cd",
+  "Created": "2026-02-26T14:17:28.390312794Z",
+  "Path": "docker-entrypoint.sh",
+  "Args": [
+    "redis-server"
+  ],
+  "State": {
+    "Status": "running",
+    "Running": true,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 2273651,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-03-06T21:10:01.670848673Z",
+    "FinishedAt": "2026-03-06T21:09:59.806969703Z"
+  },
+  "Image": "sha256:8b81dd37ff027bec4e516d41acfbe9fe2460070dc6d4a4570a2ac5b9d59df065",
+  "ResolvConfPath": "/var/lib/docker/containers/eb223aa2789f988c1da02d973b29d46a5f96bcdfcce5eeebcb6cac756804e7cd/resolv.conf",
+  "HostnamePath": "/var/lib/docker/containers/eb223aa2789f988c1da02d973b29d46a5f96bcdfcce5eeebcb6cac756804e7cd/hostname",
+  "HostsPath": "/var/lib/docker/containers/eb223aa2789f988c1da02d973b29d46a5f96bcdfcce5eeebcb6cac756804e7cd/hosts",
+  "LogPath": "/var/lib/docker/containers/eb223aa2789f988c1da02d973b29d46a5f96bcdfcce5eeebcb6cac756804e7cd/eb223aa2789f988c1da02d973b29d46a5f96bcdfcce5eeebcb6cac756804e7cd-json.log",
+  "Name": "/nextcloud-redis-1",
+  "RestartCount": 0,
+  "Driver": "overlayfs",
+  "Platform": "linux",
+  "MountLabel": "",
+  "ProcessLabel": "",
+  "AppArmorProfile": "docker-default",
+  "ExecIDs": null,
+  "HostConfig": {
+    "Binds": null,
+    "ContainerIDFile": "",
+    "LogConfig": {
+      "Type": "json-file",
+      "Config": {}
+    },
+    "NetworkMode": "nextcloud_default",
+    "PortBindings": {},
+    "RestartPolicy": {
+      "Name": "unless-stopped",
+      "MaximumRetryCount": 0
+    },
+    "AutoRemove": false,
+    "VolumeDriver": "",
+    "VolumesFrom": null,
+    "ConsoleSize": [
+      0,
+      0
+    ],
+    "CapAdd": null,
+    "CapDrop": null,
+    "CgroupnsMode": "private",
+    "Dns": [],
+    "DnsOptions": [],
+    "DnsSearch": [],
+    "ExtraHosts": [],
+    "GroupAdd": null,
+    "IpcMode": "private",
+    "Cgroup": "",
+    "Links": null,
+    "OomScoreAdj": 0,
+    "PidMode": "",
+    "Privileged": false,
+    "PublishAllPorts": false,
+    "ReadonlyRootfs": false,
+    "SecurityOpt": null,
+    "UTSMode": "",
+    "UsernsMode": "",
+    "ShmSize": 67108864,
+    "Runtime": "runc",
+    "Isolation": "",
+    "CpuShares": 0,
+    "Memory": 0,
+    "NanoCpus": 0,
+    "CgroupParent": "",
+    "BlkioWeight": 0,
+    "BlkioWeightDevice": null,
+    "BlkioDeviceReadBps": null,
+    "BlkioDeviceWriteBps": null,
+    "BlkioDeviceReadIOps": null,
+    "BlkioDeviceWriteIOps": null,
+    "CpuPeriod": 0,
+    "CpuQuota": 0,
+    "CpuRealtimePeriod": 0,
+    "CpuRealtimeRuntime": 0,
+    "CpusetCpus": "",
+    "CpusetMems": "",
+    "Devices": null,
+    "DeviceCgroupRules": null,
+    "DeviceRequests": null,
+    "MemoryReservation": 0,
+    "MemorySwap": 0,
+    "MemorySwappiness": null,
+    "OomKillDisable": null,
+    "PidsLimit": null,
+    "Ulimits": null,
+    "CpuCount": 0,
+    "CpuPercent": 0,
+    "IOMaximumIOps": 0,
+    "IOMaximumBandwidth": 0,
+    "Mounts": [
+      {
+        "Type": "volume",
+        "Source": "016b869733ba7d86203e68d069acc56cc0d5d45ab66612e9745e725816d35f79",
+        "Target": "/data"
+      }
+    ],
+    "MaskedPaths": [
+      "/proc/acpi",
+      "/proc/asound",
+      "/proc/interrupts",
+      "/proc/kcore",
+      "/proc/keys",
+      "/proc/latency_stats",
+      "/proc/sched_debug",
+      "/proc/scsi",
+      "/proc/timer_list",
+      "/proc/timer_stats",
+      "/sys/devices/virtual/powercap",
+      "/sys/firmware",
+      "/sys/devices/system/cpu/cpu0/thermal_throttle",
+      "/sys/devices/system/cpu/cpu1/thermal_throttle",
+      "/sys/devices/system/cpu/cpu2/thermal_throttle",
+      "/sys/devices/system/cpu/cpu3/thermal_throttle"
+    ],
+    "ReadonlyPaths": [
+      "/proc/bus",
+      "/proc/fs",
+      "/proc/irq",
+      "/proc/sys",
+      "/proc/sysrq-trigger"
+    ]
+  },
+  "Storage": {
+    "RootFS": {
+      "Snapshot": {
+        "Name": "overlayfs"
+      }
+    }
+  },
+  "Mounts": [
+    {
+      "Type": "volume",
+      "Name": "016b869733ba7d86203e68d069acc56cc0d5d45ab66612e9745e725816d35f79",
+      "Source": "/var/lib/docker/volumes/016b869733ba7d86203e68d069acc56cc0d5d45ab66612e9745e725816d35f79/_data",
+      "Destination": "/data",
+      "Driver": "local",
+      "Mode": "z",
+      "RW": true,
+      "Propagation": ""
+    }
+  ],
+  "Config": {
+    "Hostname": "eb223aa2789f",
+    "Domainname": "",
+    "User": "",
+    "AttachStdin": false,
+    "AttachStdout": true,
+    "AttachStderr": true,
+    "ExposedPorts": {
+      "6379/tcp": {}
+    },
+    "Tty": false,
+    "OpenStdin": false,
+    "StdinOnce": false,
+    "Cmd": [
+      "redis-server"
+    ],
+    "Image": "redis:7-alpine",
+    "Volumes": {
+      "/data": {}
+    },
+    "WorkingDir": "/data",
+    "Entrypoint": [
+      "docker-entrypoint.sh"
+    ],
+    "Labels": {
+      "com.docker.compose.config-hash": "7b61f7fd79502b4c89aa0aca17f5c885d540ac66ef863de15d715d2d7f79be2f",
+      "com.docker.compose.container-number": "1",
+      "com.docker.compose.depends_on": "",
+      "com.docker.compose.image": "sha256:8b81dd37ff027bec4e516d41acfbe9fe2460070dc6d4a4570a2ac5b9d59df065",
+      "com.docker.compose.oneoff": "False",
+      "com.docker.compose.project": "nextcloud",
+      "com.docker.compose.project.config_files": "/srv/nextcloud/docker-compose.yml",
+      "com.docker.compose.project.working_dir": "/srv/nextcloud",
+      "com.docker.compose.replace": "redis-1",
+      "com.docker.compose.service": "redis",
+      "com.docker.compose.version": "5.0.2"
+    }
+  },
+  "NetworkSettings": {
+    "SandboxID": "1dcfd225963f1c6707f1adafd83ae7606e2d13181420d8b735f982e78a11c200",
+    "SandboxKey": "/var/run/docker/netns/1dcfd225963f",
+    "Ports": {
+      "6379/tcp": null
+    },
+    "Networks": {
+      "nextcloud_default": {
+        "IPAMConfig": null,
+        "Links": null,
+        "Aliases": [
+          "nextcloud-redis-1",
+          "redis"
+        ],
+        "DriverOpts": null,
+        "GwPriority": 0,
+        "NetworkID": "de49ada7ecfcad2fb4014e057d41701035fe9cd30d1c73ae8606feb832af3943",
+        "EndpointID": "37ee25eca4f8740c89e1308e7ae3d32caec56d5edc620cd8df032b538299f32a",
+        "Gateway": "172.21.0.1",
+        "IPAddress": "172.21.0.2",
+        "MacAddress": "d6:ff:60:5e:e4:69",
+        "IPPrefixLen": 16,
+        "IPv6Gateway": "",
+        "GlobalIPv6Address": "",
+        "GlobalIPv6PrefixLen": 0,
+        "DNSNames": [
+          "nextcloud-redis-1",
+          "redis",
+          "eb223aa2789f"
+        ]
+      }
+    }
+  },
+  "ImageManifestDescriptor": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:4bfd9eca23339865dc14fe75f6d9ae643f714924623978dd2798f1a673b08f43",
+    "size": 2483,
+    "annotations": {
+      "com.docker.official-images.bashbrew.arch": "amd64",
+      "org.opencontainers.image.base.digest": "sha256:22e0ec13c0db6b3e1ba3280e831fc50ba7bffe58e81f31670a64b1afede247bc",
+      "org.opencontainers.image.base.name": "alpine:3.21",
+      "org.opencontainers.image.created": "2026-02-23T17:34:10Z",
+      "org.opencontainers.image.revision": "9d9b74b729d555ef784db63c1941b73d1c47a6f9",
+      "org.opencontainers.image.source": "https://github.com/redis/docker-library-redis.git#9d9b74b729d555ef784db63c1941b73d1c47a6f9:7.4/alpine",
+      "org.opencontainers.image.url": "https://hub.docker.com/_/redis",
+      "org.opencontainers.image.version": "7.4.8-alpine"
+    },
+    "platform": {
+      "architecture": "amd64",
+      "os": "linux"
+    }
+  }
+}

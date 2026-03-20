@@ -1,0 +1,3 @@
+#! /bin/sh
+# update postfix copy of resolv.conf (picked up automatically); only default instance is handled
+[ lo != "$IFACE" ] && cp -pLu /etc/resolv.conf /var/spool/postfix/etc/resolv.conf 2>/dev/null || :

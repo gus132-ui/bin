@@ -1,0 +1,11 @@
+127.0.0.1	localhost
+127.0.1.1	sanctum
+
+# The following lines are desirable for IPv6 capable hosts
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+10.50.0.1   chat.labunix.xyz
+10.50.0.1 labunix.xyz www.labunix.xyz
+127.0.0.1 gmi.labunix.xyz
+192.168.33.5 git.home.arpa

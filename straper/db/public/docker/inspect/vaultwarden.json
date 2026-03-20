@@ -1,0 +1,302 @@
+{
+  "Id": "2bacb550561f1b8062f243f3b9f258609dcf1d1fabf2728d7a5f9ca0f789b5af",
+  "Created": "2026-03-13T12:42:16.676262206Z",
+  "Path": "/start.sh",
+  "Args": [],
+  "State": {
+    "Status": "running",
+    "Running": true,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 1846097,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-03-13T12:42:17.530228425Z",
+    "FinishedAt": "0001-01-01T00:00:00Z",
+    "Health": {
+      "Status": "healthy",
+      "FailingStreak": 0,
+      "Log": [
+        {
+          "Start": "2026-03-20T16:23:34.011718206+01:00",
+          "End": "2026-03-20T16:23:34.075087868+01:00",
+          "ExitCode": 0,
+          "Output": "\"2026-03-20T15:23:34.073841Z\""
+        },
+        {
+          "Start": "2026-03-20T16:24:34.076265413+01:00",
+          "End": "2026-03-20T16:24:34.146729419+01:00",
+          "ExitCode": 0,
+          "Output": "\"2026-03-20T15:24:34.145246Z\""
+        },
+        {
+          "Start": "2026-03-20T16:25:34.147700417+01:00",
+          "End": "2026-03-20T16:25:34.226782615+01:00",
+          "ExitCode": 0,
+          "Output": "\"2026-03-20T15:25:34.225592Z\""
+        },
+        {
+          "Start": "2026-03-20T16:26:34.227576654+01:00",
+          "End": "2026-03-20T16:26:34.291648725+01:00",
+          "ExitCode": 0,
+          "Output": "\"2026-03-20T15:26:34.290451Z\""
+        },
+        {
+          "Start": "2026-03-20T16:27:34.292454438+01:00",
+          "End": "2026-03-20T16:27:34.378604203+01:00",
+          "ExitCode": 0,
+          "Output": "\"2026-03-20T15:27:34.377305Z\""
+        }
+      ]
+    }
+  },
+  "Image": "sha256:43498a94b22f9563f2a94b53760ab3e710eefc0d0cac2efda4b12b9eb8690664",
+  "ResolvConfPath": "/var/lib/docker/containers/2bacb550561f1b8062f243f3b9f258609dcf1d1fabf2728d7a5f9ca0f789b5af/resolv.conf",
+  "HostnamePath": "/var/lib/docker/containers/2bacb550561f1b8062f243f3b9f258609dcf1d1fabf2728d7a5f9ca0f789b5af/hostname",
+  "HostsPath": "/var/lib/docker/containers/2bacb550561f1b8062f243f3b9f258609dcf1d1fabf2728d7a5f9ca0f789b5af/hosts",
+  "LogPath": "/var/lib/docker/containers/2bacb550561f1b8062f243f3b9f258609dcf1d1fabf2728d7a5f9ca0f789b5af/2bacb550561f1b8062f243f3b9f258609dcf1d1fabf2728d7a5f9ca0f789b5af-json.log",
+  "Name": "/vaultwarden",
+  "RestartCount": 0,
+  "Driver": "overlayfs",
+  "Platform": "linux",
+  "MountLabel": "",
+  "ProcessLabel": "",
+  "AppArmorProfile": "docker-default",
+  "ExecIDs": null,
+  "HostConfig": {
+    "Binds": [
+      "/srv/vaultwarden:/data:rw"
+    ],
+    "ContainerIDFile": "",
+    "LogConfig": {
+      "Type": "json-file",
+      "Config": {}
+    },
+    "NetworkMode": "vaultwarden_default",
+    "PortBindings": {
+      "3012/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "3012"
+        }
+      ],
+      "80/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "9081"
+        }
+      ]
+    },
+    "RestartPolicy": {
+      "Name": "unless-stopped",
+      "MaximumRetryCount": 0
+    },
+    "AutoRemove": false,
+    "VolumeDriver": "",
+    "VolumesFrom": null,
+    "ConsoleSize": [
+      0,
+      0
+    ],
+    "CapAdd": null,
+    "CapDrop": null,
+    "CgroupnsMode": "private",
+    "Dns": null,
+    "DnsOptions": null,
+    "DnsSearch": null,
+    "ExtraHosts": [],
+    "GroupAdd": null,
+    "IpcMode": "private",
+    "Cgroup": "",
+    "Links": null,
+    "OomScoreAdj": 0,
+    "PidMode": "",
+    "Privileged": false,
+    "PublishAllPorts": false,
+    "ReadonlyRootfs": false,
+    "SecurityOpt": null,
+    "UTSMode": "",
+    "UsernsMode": "",
+    "ShmSize": 67108864,
+    "Runtime": "runc",
+    "Isolation": "",
+    "CpuShares": 0,
+    "Memory": 0,
+    "NanoCpus": 0,
+    "CgroupParent": "",
+    "BlkioWeight": 0,
+    "BlkioWeightDevice": null,
+    "BlkioDeviceReadBps": null,
+    "BlkioDeviceWriteBps": null,
+    "BlkioDeviceReadIOps": null,
+    "BlkioDeviceWriteIOps": null,
+    "CpuPeriod": 0,
+    "CpuQuota": 0,
+    "CpuRealtimePeriod": 0,
+    "CpuRealtimeRuntime": 0,
+    "CpusetCpus": "",
+    "CpusetMems": "",
+    "Devices": null,
+    "DeviceCgroupRules": null,
+    "DeviceRequests": null,
+    "MemoryReservation": 0,
+    "MemorySwap": 0,
+    "MemorySwappiness": null,
+    "OomKillDisable": null,
+    "PidsLimit": null,
+    "Ulimits": null,
+    "CpuCount": 0,
+    "CpuPercent": 0,
+    "IOMaximumIOps": 0,
+    "IOMaximumBandwidth": 0,
+    "MaskedPaths": [
+      "/proc/acpi",
+      "/proc/asound",
+      "/proc/interrupts",
+      "/proc/kcore",
+      "/proc/keys",
+      "/proc/latency_stats",
+      "/proc/sched_debug",
+      "/proc/scsi",
+      "/proc/timer_list",
+      "/proc/timer_stats",
+      "/sys/devices/virtual/powercap",
+      "/sys/firmware",
+      "/sys/devices/system/cpu/cpu0/thermal_throttle",
+      "/sys/devices/system/cpu/cpu1/thermal_throttle",
+      "/sys/devices/system/cpu/cpu2/thermal_throttle",
+      "/sys/devices/system/cpu/cpu3/thermal_throttle"
+    ],
+    "ReadonlyPaths": [
+      "/proc/bus",
+      "/proc/fs",
+      "/proc/irq",
+      "/proc/sys",
+      "/proc/sysrq-trigger"
+    ]
+  },
+  "Storage": {
+    "RootFS": {
+      "Snapshot": {
+        "Name": "overlayfs"
+      }
+    }
+  },
+  "Mounts": [
+    {
+      "Type": "bind",
+      "Source": "/srv/vaultwarden",
+      "Destination": "/data",
+      "Mode": "rw",
+      "RW": true,
+      "Propagation": "rprivate"
+    }
+  ],
+  "Config": {
+    "Hostname": "2bacb550561f",
+    "Domainname": "",
+    "User": "",
+    "AttachStdin": false,
+    "AttachStdout": true,
+    "AttachStderr": true,
+    "ExposedPorts": {
+      "3012/tcp": {},
+      "80/tcp": {}
+    },
+    "Tty": false,
+    "OpenStdin": false,
+    "StdinOnce": false,
+    "Cmd": [
+      "/start.sh"
+    ],
+    "Healthcheck": {
+      "Test": [
+        "CMD",
+        "/healthcheck.sh"
+      ],
+      "Interval": 60000000000,
+      "Timeout": 10000000000
+    },
+    "Image": "vaultwarden/server:latest",
+    "Volumes": {
+      "/data": {}
+    },
+    "WorkingDir": "/",
+    "Entrypoint": null,
+    "Labels": {
+      "com.docker.compose.config-hash": "3498f3433cbc487971bd2242e8c64da76f34367275caa6d793f9a78649950f05",
+      "com.docker.compose.container-number": "1",
+      "com.docker.compose.depends_on": "",
+      "com.docker.compose.image": "sha256:43498a94b22f9563f2a94b53760ab3e710eefc0d0cac2efda4b12b9eb8690664",
+      "com.docker.compose.oneoff": "False",
+      "com.docker.compose.project": "vaultwarden",
+      "com.docker.compose.project.config_files": "/srv/vaultwarden/docker-compose.yml",
+      "com.docker.compose.project.working_dir": "/srv/vaultwarden",
+      "com.docker.compose.replace": "vaultwarden",
+      "com.docker.compose.service": "vaultwarden",
+      "com.docker.compose.version": "5.1.0",
+      "org.opencontainers.image.created": "2026-02-23T21:25:05+00:00",
+      "org.opencontainers.image.description": "Unofficial Bitwarden compatible server written in Rust - 1.35.4",
+      "org.opencontainers.image.documentation": "https://github.com/dani-garcia/vaultwarden/wiki",
+      "org.opencontainers.image.licenses": "AGPL-3.0-only",
+      "org.opencontainers.image.revision": "c555f7d1980c8ab3ac8d64b0297e47c621590368",
+      "org.opencontainers.image.source": "https://github.com/dani-garcia/vaultwarden",
+      "org.opencontainers.image.url": "https://github.com/dani-garcia/vaultwarden",
+      "org.opencontainers.image.version": "1.35.4"
+    }
+  },
+  "NetworkSettings": {
+    "SandboxID": "b24adc01568ceb324178097684ae6d1ecec0ff8feb5f4f20bac35a7d52166c83",
+    "SandboxKey": "/var/run/docker/netns/b24adc01568c",
+    "Ports": {
+      "3012/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "3012"
+        }
+      ],
+      "80/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "9081"
+        }
+      ]
+    },
+    "Networks": {
+      "vaultwarden_default": {
+        "IPAMConfig": null,
+        "Links": null,
+        "Aliases": [
+          "vaultwarden",
+          "vaultwarden"
+        ],
+        "DriverOpts": null,
+        "GwPriority": 0,
+        "NetworkID": "ed53bc5d215597cef205ee67cb8ada0d04864027a8b011bded3a3784de4c2493",
+        "EndpointID": "22edb1805879682f47241afdda8f92b9e9a1ff80cd9e133e18a313dc61fd5704",
+        "Gateway": "172.20.0.1",
+        "IPAddress": "172.20.0.2",
+        "MacAddress": "a6:d6:16:b6:fa:c9",
+        "IPPrefixLen": 16,
+        "IPv6Gateway": "",
+        "GlobalIPv6Address": "",
+        "GlobalIPv6PrefixLen": 0,
+        "DNSNames": [
+          "vaultwarden",
+          "2bacb550561f"
+        ]
+      }
+    }
+  },
+  "ImageManifestDescriptor": {
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "digest": "sha256:73f9a159204917843875eb12c5ccd9acbcbf8f15ff7f2ce43cf912eef9f97eff",
+    "size": 1249,
+    "platform": {
+      "architecture": "amd64",
+      "os": "linux"
+    }
+  }
+}

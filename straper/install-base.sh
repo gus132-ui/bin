@@ -115,8 +115,24 @@ bootstrap_dns_prepare() {
   local test_host="${BOOTSTRAP_TEST_HOST:-deb.debian.org}"
   local backup="/etc/resolv.conf.labunix-preinstall.bak"
 
+  # Always write a static resolv.conf — breaks any symlink to systemd-resolved
+  # stub (127.0.0.53) which can disappear when services restart mid-install.
+  [[ -e /etc/resolv.conf && ! -e "${backup}" ]] && cp -a /etc/resolv.conf "${backup}" || true
+
   if getent ahostsv4 "${test_host}" >/dev/null 2>&1; then
-    report "${SCRIPT_NAME}" "dns" "bootstrap" "check" "ok" "resolver already working" ""
+    # DNS works but may be via stub — write static file pointing at real resolver
+    local current_ns
+    current_ns="$(grep '^nameserver' /etc/resolv.conf 2>/dev/null | head -1 | awk '{print $2}')"
+    # Never use stub addresses — they won't survive service restarts
+    if [[ "$current_ns" == "127.0.0.53" || "$current_ns" == "127.0.0.54" || -z "$current_ns" ]]; then
+      current_ns="1.1.1.1"
+    fi
+    [[ -L /etc/resolv.conf ]] && rm -f /etc/resolv.conf
+    printf 'nameserver %s
+nameserver 9.9.9.9
+' "$current_ns" > /etc/resolv.conf
+    chmod 644 /etc/resolv.conf
+    report "${SCRIPT_NAME}" "dns" "bootstrap" "check" "ok" "static resolv.conf written: ${current_ns}" ""
     return 0
   fi
 
@@ -125,17 +141,15 @@ bootstrap_dns_prepare() {
     die "bootstrap DNS check failed: no outbound IP connectivity"
   fi
 
-  if command -v dig >/dev/null 2>&1 && dig +time=2 +tries=1 +short @1.1.1.1 "${test_host}" >/dev/null 2>&1; then
-    [[ -e /etc/resolv.conf && ! -e "${backup}" ]] && cp -a /etc/resolv.conf "${backup}" || true
-    printf 'nameserver 1.1.1.1
+  [[ -L /etc/resolv.conf ]] && rm -f /etc/resolv.conf
+  printf 'nameserver 1.1.1.1
 nameserver 9.9.9.9
 ' > /etc/resolv.conf
-    chmod 644 /etc/resolv.conf || true
+  chmod 644 /etc/resolv.conf
 
-    if getent ahostsv4 "${test_host}" >/dev/null 2>&1; then
-      report "${SCRIPT_NAME}" "dns" "bootstrap" "fallback" "changed" "static resolv.conf applied" "${backup}"
-      return 0
-    fi
+  if getent ahostsv4 "${test_host}" >/dev/null 2>&1; then
+    report "${SCRIPT_NAME}" "dns" "bootstrap" "fallback" "changed" "static fallback resolv.conf applied" "${backup}"
+    return 0
   fi
 
   note_failure "${SCRIPT_NAME}" "dns" "bootstrap" "check" "DNS still broken after fallback attempt"

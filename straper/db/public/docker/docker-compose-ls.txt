@@ -1,0 +1,14 @@
+NAME                STATUS              CONFIG FILES
+compose             running(1)          /srv/forgejo/compose/docker-compose.yml
+cryptpad            running(1)          /srv/cryptpad/docker-compose.yml
+etherpad            running(1)          /srv/etherpad/docker-compose.yml
+healthchecks        running(2)          /srv/healthchecks/docker-compose.yml
+nextcloud           running(3)          /srv/nextcloud/docker-compose.yml
+open-notebook       running(2)          /srv/open-notebook/docker-compose.yml
+paperless           running(3)          /srv/paperless/docker-compose.yml
+privatebin          running(1)          /srv/privatebin/docker-compose.yml
+searxng             running(1)          /srv/searxng/docker-compose.yml
+stirling            running(1)          /srv/stirling/docker-compose.yml
+uptime-kuma         running(1)          /srv/uptime-kuma/docker-compose.yml
+vaultwarden         running(1)          /srv/vaultwarden/docker-compose.yml
+wikijs              running(2)          /srv/wikijs/docker-compose.yml

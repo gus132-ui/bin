@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: 2023 XWiki CryptPad Team <contact@cryptpad.org> and contributors
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+---
+services:
+  cryptpad:
+    image: "cryptpad/cryptpad:latest"
+    restart: unless-stopped
+    stop_grace_period: 120s
+    hostname: cryptpad
+
+    environment:
+      - CPAD_MAIN_DOMAIN=https://pad.labunix.xyz
+      - CPAD_SANDBOX_DOMAIN=https://pad-sandbox.labunix.xyz
+      - CPAD_CONF=/cryptpad/config/config.js
+
+
+      # Read and accept the license before uncommenting the following line:
+      # https://github.com/ONLYOFFICE/web-apps/blob/master/LICENSE.txt
+      # - CPAD_INSTALL_ONLYOFFICE=yes
+
+    volumes:
+      - ./data/blob:/cryptpad/blob
+      - ./data/block:/cryptpad/block
+      - ./customize:/cryptpad/customize
+      - ./data/data:/cryptpad/data
+      - ./data/files:/cryptpad/datastore
+      - ./onlyoffice-dist:/cryptpad/www/common/onlyoffice/dist
+      - ./onlyoffice-conf:/cryptpad/onlyoffice-conf
+      - ./config:/cryptpad/config
+
+    ports:
+      - "127.0.0.1:3101:3000"
+      - "127.0.0.1:3103:3003"
+
+    ulimits:
+      nofile:
+        soft: 1000000
+        hard: 1000000

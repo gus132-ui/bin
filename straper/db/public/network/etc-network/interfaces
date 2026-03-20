@@ -1,0 +1,7 @@
+auto lo
+iface lo inet loopback
+
+auto enx00e04c2e4828
+iface enx00e04c2e4828 inet dhcp
+
+

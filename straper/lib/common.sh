@@ -8,7 +8,7 @@ TOOLKIT_DIR="$(cd -- "${COMMON_DIR}/.." && pwd)"
 TOOLKIT_NAME="labunix-rebuild"
 TOOLKIT_VERSION="0.1.1"
 
-: "${DB_DIR:=/srv/sanctum-rebuild}"
+: "${DB_DIR:=${SCRIPT_DIR:-/srv/sanctum-rebuild}}"
 : "${PUBLIC_DIR:=${DB_DIR}/db/public}"
 : "${SECRET_DIR:=${DB_DIR}/db/secret}"
 : "${ROLE:=lab}"                   # lab | hardware | replacement
