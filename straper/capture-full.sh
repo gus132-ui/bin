@@ -23,10 +23,10 @@
 #   - GPG_RECIPIENT must be set (key fingerprint or email), OR
 #     set it in /etc/labunix/capture.conf or ~/.config/labunix/capture.conf
 #   - jq must be installed: apt install jq
-#   - Output goes to CAPTURE_DIR (default: /srv/sanctum-rebuild)
+#   - Output goes to CAPTURE_DIR (default: <toolkit-dir>/db/)
 #
 # OUTPUT STRUCTURE
-#   /srv/sanctum-rebuild/
+#   <toolkit-dir>/db/
 #   ├── capture-full.sh         this script (self-referential copy)
 #   ├── bootstrap.sh            reproduction script (generated separately)
 #   ├── db/
@@ -48,7 +48,7 @@
 #   - db/public/  : safe to push to private git repo
 #   - db/secret/  : local only, root-only permissions (chmod 700)
 #                     protected by ZFS-on-LUKS disk encryption
-#   - The .gitignore in CAPTURE_DIR excludes db/secret/ entirely
+#   - The .gitignore in the toolkit dir excludes db/secret/ entirely
 #   - bootstrap.sh reads db/public/ for structure and db/secret/ for values
 # =============================================================================
 
@@ -57,7 +57,8 @@ set -euo pipefail
 # --------------------------------------------------------------------------- #
 #  CONFIGURATION
 # --------------------------------------------------------------------------- #
-CAPTURE_DIR="${CAPTURE_DIR:-/srv/sanctum-rebuild}"
+SCRIPT_DIR="$(cd -- "$(dirname -- "$0")" && pwd)"
+CAPTURE_DIR="${CAPTURE_DIR:-${SCRIPT_DIR}}"
 PUBLIC_DIR="${CAPTURE_DIR}/db/public"
 SECRET_DIR="${CAPTURE_DIR}/db/secret"
 TIMESTAMP="$(date +"%Y-%m-%dT%H:%M:%S")"
