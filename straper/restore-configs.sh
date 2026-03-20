@@ -319,6 +319,12 @@ restore_network() {
   maybe_restore "network" "etc-netplan"      "${base}/etc-netplan"      "/etc/netplan"
   maybe_restore "network" "systemd-network"  "${base}/systemd-network"  "/etc/systemd/network"
   maybe_restore "network" "nsswitch.conf"    "${base}/nsswitch.conf"    "/etc/nsswitch.conf"
+
+  # Postfix maintains a chroot copy of nsswitch.conf — refresh it after restore
+  if ! $DRY_RUN && have_cmd postfix; then
+    postfix set-permissions 2>/dev/null || true
+    report "${SCRIPT_NAME}" "network" "postfix-chroot-sync" "fix" "ok" "postfix chroot permissions refreshed" ""
+  fi
   maybe_restore "network" "hosts.allow"      "${base}/hosts.allow"      "/etc/hosts.allow"
   maybe_restore "network" "hosts.deny"       "${base}/hosts.deny"       "/etc/hosts.deny"
 }
@@ -801,32 +807,29 @@ EOF
     chown -R unbound:unbound /var/lib/unbound 2>/dev/null || true
     chmod 755 /var/lib/unbound 2>/dev/null || true
 
-    # Trust anchor: unbound-anchor not shipped on Debian 13.
-    # Seed root.key in autotrust format with both current KSKs (20326 + 38696).
-    # unbound will validate and update the file automatically once running.
-    # Check DB first — if capture included root.key use that, else use built-in seed.
-    local db_rootkey="${PUBLIC_DIR}/dns/unbound-root.key"
-    if [[ ! -f /var/lib/unbound/root.key ]]; then
-      if [[ -f "$db_rootkey" ]]; then
-        cp "$db_rootkey" /var/lib/unbound/root.key
-        _dns_ok "trust anchor restored from DB"
-        report "${SCRIPT_NAME}" "dns" "unbound-trustanchor" "prepare" "changed" "restored from DB" ""
+    # Trust anchor: on Debian 13, root.key is seeded from /usr/share/dns/root.key
+    # which is provided by the dns-root-data package. Install it and run the helper.
+    if [[ ! -f /usr/share/dns/root.key ]]; then
+      log "dns: installing dns-root-data for unbound trust anchor..."
+      DEBIAN_FRONTEND=noninteractive apt-get install -y dns-root-data >/dev/null 2>&1 \
+        && _dns_ok "dns-root-data installed" \
+        || { _dns_manual "dns-root-data install failed — install manually: apt install dns-root-data"; \
+             manual_tasks+=("MANUAL: apt install dns-root-data then systemctl restart unbound"); }
+    fi
+    if [[ -f /usr/share/dns/root.key ]]; then
+      rm -f /var/lib/unbound/root.key
+      /usr/libexec/unbound-helper root_trust_anchor_update 2>/dev/null || true
+      if [[ -f /var/lib/unbound/root.key ]]; then
+        chown unbound:unbound /var/lib/unbound/root.key 2>/dev/null || true
+        _dns_ok "trust anchor seeded from dns-root-data via unbound-helper"
+        report "${SCRIPT_NAME}" "dns" "unbound-trustanchor" "prepare" "changed" "seeded from dns-root-data" ""
       else
-        # Built-in seed: autotrust format with KSK-2017 (20326) and KSK-2024 (38696)
-        cat > /var/lib/unbound/root.key << 'ROOTKEY'
-; autotrust trust anchor file
-;;id: . 1
-. 3600 IN DNSKEY 257 3 8 AwEAAaz/tAm8yTn4Mfeh5eyI96WSVexTBAvkMgJzkKTOiW1vkIbzxeF3+/4RgWOq7HrxRixHlFlExOLAJr5emLvN7SWXgnLh4+B5xQlNVz8Og8kvArMtNROxVQuCaSnIDdD5LKyWbRd2n9WGe2R8PzgCmr3EgVLrjyBxWezF0jLHwVN8efS3rCj/EWgvIWgb9tarpVUDK/b58Da+sqqls3eNbuv7pr+eoZG+SrDK6nWeL3c6H5Apxz7LjVc1uTIdsIXxuOLYA4/ilBmSVIzuDWfdRUfhHdY6+cn8HFRm+2hM8AnXGXws9555KrUB5qihylGa8subX2Nn6UwNR1AkUTV74bU= ;{id = 20326 (ksk), size = 2048b} ;;state=1 [ ADDPEND ] ;;count=0 ;;lastchange=0 ;;Thu Jan  1 00:00:00 1970
-. 3600 IN DNSKEY 257 3 8 AwEAAa96jeuknZlaeSrvyAJj6ZHv28hhOKkx3rLGXVaC6rXTsDc449/cidltpkyGwCJNnOAlFNKF2jBosZBU5eeHspaQWOmOElZsjICMQMC3aeHbGiShvZsx4wMYSjH8e7Vrhbu6irwCzVBApESjbUdpWWmEnhathWu1jo+siFUiRAAxm9qyJNg/wOZqqzL/dL/q8PkcRU5oUKEpUge71M3ej2/7CPqpdVwuMoTvoB+ZOT4YeGyxMvHmbrxlFzGOHOijtzN+u1TQNatX2XBuzZNQ1K+s2CXkPIZo7s6JgZyvaBevYtxPvYLw4z9mR7K2vaF18UYH9Z9GNUUeayffKC73PYc= ;{id = 38696 (ksk), size = 2048b} ;;state=1 [ ADDPEND ] ;;count=0 ;;lastchange=0 ;;Thu Jan  1 00:00:00 1970
-ROOTKEY
-        _dns_ok "trust anchor seeded (KSK-2017 + KSK-2024 autotrust format)"
-        report "${SCRIPT_NAME}" "dns" "unbound-trustanchor" "prepare" "changed" "seeded built-in autotrust root.key" ""
+        _dns_manual "unbound-helper ran but root.key not created"
+        manual_tasks+=("MANUAL: sudo rm /var/lib/unbound/root.key && sudo /usr/libexec/unbound-helper root_trust_anchor_update")
       fi
-      chown unbound:unbound /var/lib/unbound/root.key 2>/dev/null || true
-      chmod 644 /var/lib/unbound/root.key
     else
-      _dns_ok "trust anchor already present"
-      report "${SCRIPT_NAME}" "dns" "unbound-trustanchor" "prepare" "ok" "root.key exists" ""
+      _dns_manual "dns-root-data not available — unbound DNSSEC will not work"
+      manual_tasks+=("MANUAL: apt install dns-root-data then restart unbound")
     fi
   fi
 
