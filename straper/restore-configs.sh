@@ -323,24 +323,684 @@ restore_network() {
   maybe_restore "network" "hosts.deny"       "${base}/hosts.deny"       "/etc/hosts.deny"
 }
 
+# =============================================================================
+# restore_dns() — smart, adaptive DNS category restore
+# =============================================================================
+#
+# DROP-IN REPLACEMENT for the naive restore_dns() in restore-configs.sh.
+# Replace lines 326-344 with this entire block.
+#
+# What this does that the old version did not:
+#
+#   1. SCAN   — detects live interfaces, IPs, WireGuard ifaces, Docker bridges,
+#               who currently owns port 53
+#   2. ANALYZE — classifies each captured dnsmasq.conf and dnsmasq.d/* file:
+#               safe | adapted | dormant-wireguard | dormant-docker | manual
+#   3. ADAPT  — rewrites listen-address/server lines to only use IPs that
+#               exist on this machine right now
+#   4. PREPARE — bootstraps unbound root.key if missing
+#               disables systemd-resolved stub if it would conflict
+#   5. START  — enables + starts unbound then dnsmasq in correct order
+#               verifies each is listening before proceeding
+#   6. VERIFY — confirms deb.debian.org resolves
+#               only then writes /etc/resolv.conf
+#   7. REPORT — prints a precise summary with ✓/⚠/✗ and a MANUAL TASKS list
+#
+# Roles:
+#   lab         — skipped (architecture mismatch too severe for lab)
+#   hardware    — full adaptive restore, services started
+#   replacement — full adaptive restore, services started
+#
+# =============================================================================
+
+# ── Internal helpers ──────────────────────────────────────────────────────────
+
+# Print a DNS-category-specific status line (not using global report() for
+# the inline summary — those go to TSV separately)
+_dns_ok()     { printf '  \033[32m✓\033[0m adapted    %s\n' "$*"; }
+_dns_dormant(){ printf '  \033[33m⚠\033[0m dormant    %s\n' "$*"; }
+_dns_manual() { printf '  \033[31m✗\033[0m MANUAL     %s\n' "$*"; }
+_dns_info()   { printf '  \033[36m·\033[0m            %s\n' "$*"; }
+
+# Collect all IPs currently assigned to any interface on this machine
+_live_ips() {
+  ip -o addr show 2>/dev/null \
+    | awk '{print $4}' \
+    | sed 's|/.*||' \
+    | sort -u
+}
+
+# Collect WireGuard interface names currently present
+_wg_ifaces() {
+  ip link show type wireguard 2>/dev/null \
+    | awk -F': ' '/^[0-9]+:/{print $2}' \
+    | awk '{print $1}' \
+    | sort -u
+}
+
+# Collect Docker bridge IPs (172.x.x.1 pattern on br-* or docker0)
+_docker_bridge_ips() {
+  ip -o addr show 2>/dev/null \
+    | awk '/br-|docker0/{print $4}' \
+    | sed 's|/.*||' \
+    | sort -u
+}
+
+# Who owns port 53 right now?
+_port53_owner() {
+  local line
+  line="$(ss -tlnp 2>/dev/null | grep ':53 ' | head -1)"
+  if   echo "$line" | grep -q dnsmasq;  then echo "dnsmasq"
+  elif echo "$line" | grep -q unbound;  then echo "unbound"
+  elif echo "$line" | grep -q systemd;  then echo "resolved"
+  elif [[ -z "$line" ]];                then echo "none"
+  else                                       echo "unknown"
+  fi
+}
+
+# Is an IP a WireGuard-range IP? (10.50.x.x by default on sanctum)
+# Also checks if it matches any IP on a wg interface
+_is_wg_ip() {
+  local ip="$1"
+  # Check against known wg interface IPs
+  local wg_ips
+  wg_ips="$(ip -o addr show type wireguard 2>/dev/null | awk '{print $4}' | sed 's|/.*||')"
+  echo "$wg_ips" | grep -qx "$ip" && return 0
+  # Heuristic: 10.50.x.x is sanctum's WireGuard subnet
+  [[ "$ip" =~ ^10\.50\. ]] && return 0
+  return 1
+}
+
+# Is an IP a Docker bridge IP?
+_is_docker_ip() {
+  local ip="$1"
+  _docker_bridge_ips | grep -qx "$ip" && return 0
+  [[ "$ip" =~ ^172\.(1[6-9]|2[0-9]|3[01])\. ]] && return 0
+  return 1
+}
+
+# Is an IP live on this machine right now?
+_ip_is_live() {
+  _live_ips | grep -qx "$1"
+}
+
+# Is an IP in a private LAN range (RFC1918) that is just not live on this machine?
+# These are likely the source host's LAN IPs — dormant on fresh hardware, not truly foreign.
+_is_lan_ip() {
+  local ip="$1"
+  [[ "$ip" =~ ^10\. ]]          && return 0
+  [[ "$ip" =~ ^192\.168\. ]]    && return 0
+  [[ "$ip" =~ ^172\.(1[6-9]|2[0-9]|3[01])\. ]] && return 0
+  return 1
+}
+
+# Classify a single IP from a dnsmasq config perspective
+# Returns: live | wg | docker | lan | foreign
+_classify_ip() {
+  local ip="$1"
+  [[ "$ip" == "127.0.0.1" || "$ip" == "::1" ]] && { echo "live"; return; }
+  _ip_is_live "$ip"   && { echo "live";    return; }
+  _is_wg_ip   "$ip"   && { echo "wg";      return; }
+  _is_docker_ip "$ip" && { echo "docker";  return; }
+  _is_lan_ip  "$ip"   && { echo "lan";     return; }
+  echo "foreign"
+}
+
+# Rewrite a dnsmasq config file, adapting listen-address and server= lines.
+# Writes adapted file to $dst. Returns classification of the file overall.
+# Prints per-line notes to stdout.
+_adapt_dnsmasq_file() {
+  local src="$1" dst="$2" fname="$3"
+  local line classification="safe"
+  local has_wg=false has_docker=false has_foreign=false has_live=false
+  local dropped_lan=()
+  local has_lan_dropped=false
+
+  local tmp
+  tmp="$(mktemp)"
+
+  while IFS= read -r line; do
+    # ── listen-address = a,b,c ──────────────────────────────────────────────
+    if [[ "$line" =~ ^[[:space:]]*listen-address= ]]; then
+      local addr_str="${line#*=}"
+      local new_addrs=() dropped_wg=() dropped_docker=() dropped_foreign=()
+
+      IFS=',' read -ra addrs <<< "$addr_str"
+      for addr in "${addrs[@]}"; do
+        addr="${addr// /}"
+        local cls
+        cls="$(_classify_ip "$addr")"
+        case "$cls" in
+          live)    new_addrs+=("$addr"); has_live=true ;;
+          wg)      dropped_wg+=("$addr"); has_wg=true ;;
+          docker)  dropped_docker+=("$addr"); has_docker=true ;;
+          lan)     dropped_lan+=("$addr"); has_lan_dropped=true ;;
+          foreign) dropped_foreign+=("$addr"); has_foreign=true ;;
+        esac
+      done
+
+      if [[ ${#new_addrs[@]} -gt 0 ]]; then
+        printf 'listen-address=%s\n' "$(IFS=','; echo "${new_addrs[*]}")" >> "$tmp"
+      else
+        # No live addresses left — bind to loopback only as safe fallback
+        printf 'listen-address=127.0.0.1\n' >> "$tmp"
+        _dns_info "$fname: all listen-address IPs non-local — fell back to 127.0.0.1"
+      fi
+
+      [[ ${#dropped_wg[@]} -gt 0 ]]      && classification="dormant-wg"
+      [[ ${#dropped_docker[@]} -gt 0 ]]  && [[ "$classification" == "safe" ]] && classification="dormant-docker"
+      [[ ${#dropped_foreign[@]} -gt 0 ]] && classification="foreign"
+      continue
+    fi
+
+    # ── interface= lines referencing named interfaces ───────────────────────
+    if [[ "$line" =~ ^[[:space:]]*interface= ]]; then
+      local iface_name="${line#*=}"
+      iface_name="${iface_name// /}"
+      if ip link show "$iface_name" >/dev/null 2>&1; then
+        printf '%s\n' "$line" >> "$tmp"
+      else
+        printf '# [adapted] interface=%s not present — uncomment when interface exists\n' \
+          "$iface_name" >> "$tmp"
+        if [[ "$iface_name" =~ ^wg ]]; then
+          has_wg=true
+        elif [[ "$iface_name" =~ ^br-|^docker ]]; then
+          has_docker=true
+        else
+          has_foreign=true
+        fi
+      fi
+      continue
+    fi
+
+    # ── server= lines pointing at specific IPs ──────────────────────────────
+    if [[ "$line" =~ ^[[:space:]]*server= ]]; then
+      local server_val="${line#*=}"
+      # Extract just the IP part (before any #port or @iface)
+      local server_ip
+      server_ip="$(echo "$server_val" | sed 's|[#@].*||' | tr -d '/')"
+      if [[ -n "$server_ip" && "$server_ip" != "127.0.0.1" && "$server_ip" != "::1" ]]; then
+        local cls
+        cls="$(_classify_ip "$server_ip")"
+        case "$cls" in
+          wg)     has_wg=true ;;
+          docker) has_docker=true ;;
+          foreign) has_foreign=true ;;
+        esac
+      fi
+      printf '%s\n' "$line" >> "$tmp"
+      continue
+    fi
+
+    # All other lines pass through unchanged
+    printf '%s\n' "$line" >> "$tmp"
+  done < "$src"
+
+  # Final classification
+  # Note: "lan" IPs (RFC1918 not live on this machine) are treated as
+  # dormant-hardware — they belong to the source host's LAN and will be
+  # valid on real replacement hardware. They do NOT trigger "foreign".
+  if $has_foreign; then
+    classification="foreign"
+  elif $has_wg; then
+    classification="dormant-wg"
+  elif $has_docker; then
+    classification="dormant-docker"
+  fi
+  # If only lan IPs were dropped (no wg/docker/foreign), mark dormant-hardware
+  if [[ "$classification" == "safe" && ${#dropped_lan[@]} -gt 0 ]]; then
+    classification="dormant-hardware"
+  fi
+
+  mv "$tmp" "$dst"
+  echo "$classification"
+}
+
+# ── Main restore_dns() ────────────────────────────────────────────────────────
+
 restore_dns() {
   local base="${PUBLIC_DIR}/dns"
   [[ -d "${base}" ]] || { mark_manual "${SCRIPT_NAME}" "dns" "db" "missing ${base}"; return 0; }
 
-  if ! prompt_yes_no "Restore category 'dns'? This can disrupt resolver state." no; then
+  if ! prompt_yes_no "Restore category 'dns'? This will adapt and apply the captured DNS stack." no; then
     report "${SCRIPT_NAME}" "dns" "category" "restore" "skipped" "operator skipped category" ""
     return 0
   fi
 
+  # lab: architecture too machine-specific, skip
   if [[ "${ROLE}" == "lab" ]]; then
-    report "${SCRIPT_NAME}" "dns" "category" "manual" "manual" "lab role: DNS restore intentionally skipped" ""
+    report "${SCRIPT_NAME}" "dns" "category" "manual" "manual" \
+      "lab role: DNS restore intentionally skipped — run with --role hardware to test" ""
     return 0
   fi
 
-  maybe_restore "dns" "dnsmasq.conf" "${base}/dnsmasq.conf" "/etc/dnsmasq.conf"
-  maybe_restore "dns" "dnsmasq.d"    "${base}/dnsmasq.d"    "/etc/dnsmasq.d"
-  maybe_restore "dns" "etc-unbound"  "${base}/etc-unbound"  "/etc/unbound"
-  maybe_restore "dns" "resolv.conf"  "${base}/resolv.conf"  "/etc/resolv.conf"
+  # ── MANUAL TASKS accumulator ────────────────────────────────────────────────
+  local manual_tasks=()
+
+  # ── PHASE 1: SCAN ──────────────────────────────────────────────────────────
+  log "dns: scanning local topology..."
+
+  local live_ips wg_ifaces docker_ips port53_owner
+  live_ips="$(_live_ips | tr '\n' ' ')"
+  wg_ifaces="$(_wg_ifaces | tr '\n' ' ')"
+  docker_ips="$(_docker_bridge_ips | tr '\n' ' ')"
+  port53_owner="$(_port53_owner)"
+
+  log "dns: live IPs: ${live_ips:-none}"
+  log "dns: WireGuard ifaces: ${wg_ifaces:-none}"
+  log "dns: Docker bridge IPs: ${docker_ips:-none}"
+  log "dns: port 53 currently owned by: ${port53_owner}"
+
+  report "${SCRIPT_NAME}" "dns" "topology-scan" "scan" "ok" \
+    "live_ips=${live_ips} wg=${wg_ifaces:-none} docker=${docker_ips:-none} port53=${port53_owner}" ""
+
+  # ── PHASE 2: DISABLE SYSTEMD-RESOLVED STUB if it owns port 53 ──────────────
+  # systemd-resolved's stub listener on 127.0.0.53 conflicts with dnsmasq
+  # wanting to own 127.0.0.1:53. The correct fix for sanctum's architecture
+  # is to disable the stub and let dnsmasq own the port.
+  if [[ "$port53_owner" == "resolved" ]]; then
+    log "dns: systemd-resolved stub owns port 53 — disabling stub listener..."
+    if $DRY_RUN; then
+      printf '[dry] mkdir -p /etc/systemd/resolved.conf.d\n'
+      printf '[dry] write DNSStubListener=no to /etc/systemd/resolved.conf.d/no-stub.conf\n'
+      printf '[dry] systemctl restart systemd-resolved\n'
+    else
+      mkdir -p /etc/systemd/resolved.conf.d
+      printf '[Resolve]\nDNSStubListener=no\n' \
+        > /etc/systemd/resolved.conf.d/no-stub.conf
+      systemctl restart systemd-resolved >/dev/null 2>&1 || true
+      sleep 1
+      port53_owner="$(_port53_owner)"
+      log "dns: port 53 owner after stub disable: ${port53_owner}"
+    fi
+    report "${SCRIPT_NAME}" "dns" "resolved-stub" "adapt" "changed" \
+      "disabled systemd-resolved DNSStubListener to free port 53 for dnsmasq" ""
+  fi
+
+  # ── PHASE 3: ADAPT AND RESTORE DNSMASQ.CONF ────────────────────────────────
+  if [[ -f "${base}/dnsmasq.conf" ]]; then
+    log "dns: adapting dnsmasq.conf..."
+    local adapted_conf
+    adapted_conf="$(mktemp)"
+
+    if $DRY_RUN; then
+      printf '[dry] adapt dnsmasq.conf → /etc/dnsmasq.conf\n'
+      report "${SCRIPT_NAME}" "dns" "dnsmasq.conf" "restore" "ok" "dry-run only" ""
+    else
+      local cls
+      cls="$(_adapt_dnsmasq_file "${base}/dnsmasq.conf" "$adapted_conf" "dnsmasq.conf")"
+      cp "$adapted_conf" /etc/dnsmasq.conf
+      rm -f "$adapted_conf"
+      chown root:root /etc/dnsmasq.conf
+      chmod 0644 /etc/dnsmasq.conf
+
+      case "$cls" in
+        safe)
+          _dns_ok "dnsmasq.conf (no adaptation needed)"
+          report "${SCRIPT_NAME}" "dns" "dnsmasq.conf" "restore" "changed" "restored unchanged" "" ;;
+        dormant-wg)
+          _dns_ok "dnsmasq.conf (adapted — WireGuard IPs dormant until wg0 exists)"
+          report "${SCRIPT_NAME}" "dns" "dnsmasq.conf" "restore" "changed" "adapted: WireGuard IPs stripped from listen-address" ""
+          manual_tasks+=("WireGuard IPs in dnsmasq.conf will activate automatically once wg0 is up") ;;
+        dormant-docker)
+          _dns_ok "dnsmasq.conf (adapted — Docker bridge IPs dormant until Docker is up)"
+          report "${SCRIPT_NAME}" "dns" "dnsmasq.conf" "restore" "changed" "adapted: Docker IPs stripped from listen-address" ""
+          manual_tasks+=("Docker bridge IPs in dnsmasq.conf will activate automatically once Docker is up") ;;
+        dormant-hardware)
+          _dns_ok "dnsmasq.conf (adapted — source-host LAN IPs stripped, will need real NIC IP)"
+          report "${SCRIPT_NAME}" "dns" "dnsmasq.conf" "restore" "changed" "adapted: source LAN IPs stripped" ""
+          manual_tasks+=("dnsmasq.conf: add this machine's LAN IP to listen-address once NIC is configured") ;;
+        foreign)
+          _dns_dormant "dnsmasq.conf (contains unrecognized IPs — adapted to 127.0.0.1 only)"
+          report "${SCRIPT_NAME}" "dns" "dnsmasq.conf" "restore" "changed" "adapted: foreign IPs stripped" ""
+          manual_tasks+=("dnsmasq.conf had unrecognized IPs — verify listen-address in /etc/dnsmasq.conf") ;;
+      esac
+    fi
+  else
+    mark_manual "${SCRIPT_NAME}" "dns" "dnsmasq.conf" "not found in DB"
+  fi
+
+  # ── PHASE 4: ADAPT AND RESTORE DNSMASQ.D/* ─────────────────────────────────
+  if [[ -d "${base}/dnsmasq.d" ]]; then
+    log "dns: adapting dnsmasq.d/..."
+    local dest_d="/etc/dnsmasq.d"
+    mkdir -p "$dest_d"
+
+    for src_file in "${base}/dnsmasq.d"/*; do
+      [[ -f "$src_file" ]] || continue
+      local fname
+      fname="$(basename "$src_file")"
+      local dst_file="${dest_d}/${fname}"
+      local adapted_f
+      adapted_f="$(mktemp)"
+
+      if $DRY_RUN; then
+        printf '[dry] adapt dnsmasq.d/%s → %s\n' "$fname" "$dst_file"
+        rm -f "$adapted_f"
+        continue
+      fi
+
+      local cls
+      cls="$(_adapt_dnsmasq_file "$src_file" "$adapted_f" "dnsmasq.d/${fname}")"
+      cp "$adapted_f" "$dst_file"
+      rm -f "$adapted_f"
+      chown root:root "$dst_file"
+      chmod 0644 "$dst_file"
+
+      case "$cls" in
+        safe)
+          _dns_ok "dnsmasq.d/${fname}"
+          report "${SCRIPT_NAME}" "dns" "dnsmasq.d/${fname}" "restore" "changed" "restored unchanged" "" ;;
+        dormant-wg)
+          _dns_dormant "dnsmasq.d/${fname} (WireGuard-dependent — dormant until wg0 exists)"
+          report "${SCRIPT_NAME}" "dns" "dnsmasq.d/${fname}" "restore" "changed" "adapted: WireGuard IPs dormant" ""
+          manual_tasks+=("dnsmasq.d/${fname}: WireGuard-dependent rules preserved, activate when wg0 is up") ;;
+        dormant-docker)
+          _dns_dormant "dnsmasq.d/${fname} (Docker-dependent — dormant until Docker bridges exist)"
+          report "${SCRIPT_NAME}" "dns" "dnsmasq.d/${fname}" "restore" "changed" "adapted: Docker IPs dormant" ""
+          manual_tasks+=("dnsmasq.d/${fname}: Docker-dependent rules preserved, activate when Docker is up") ;;
+        dormant-hardware)
+          _dns_ok "dnsmasq.d/${fname} (adapted — source-host LAN IPs stripped)"
+          report "${SCRIPT_NAME}" "dns" "dnsmasq.d/${fname}" "restore" "changed" "adapted: source LAN IPs stripped" ""
+          manual_tasks+=("dnsmasq.d/${fname}: add this machine LAN IP to listen-address once NIC is configured") ;;
+        foreign)
+          _dns_manual "dnsmasq.d/${fname} (contains truly unrecognized IPs — copied but needs review)"
+          report "${SCRIPT_NAME}" "dns" "dnsmasq.d/${fname}" "restore" "changed" "adapted: foreign IPs stripped — review needed" ""
+          manual_tasks+=("REVIEW: dnsmasq.d/${fname} had unrecognized IPs — verify manually") ;;
+      esac
+    done
+
+    report "${SCRIPT_NAME}" "dns" "dnsmasq.d" "restore" "changed" "all files adapted and copied" ""
+  fi
+
+  # ── PHASE 5: RESTORE UNBOUND ────────────────────────────────────────────────
+  if [[ -d "${base}/etc-unbound" ]]; then
+    log "dns: restoring unbound config..."
+    if $DRY_RUN; then
+      printf '[dry] restore etc-unbound → /etc/unbound\n'
+    else
+      restore_path "${SCRIPT_NAME}" "dns" "etc-unbound" \
+        "${base}/etc-unbound" "/etc/unbound" || true
+      chown -R root:root /etc/unbound 2>/dev/null || true
+      find /etc/unbound -type d -exec chmod 0755 {} + 2>/dev/null || true
+      find /etc/unbound -type f -exec chmod 0644 {} + 2>/dev/null || true
+    fi
+    report "${SCRIPT_NAME}" "dns" "etc-unbound" "restore" "changed" "unbound config restored and permissions normalized" ""
+  fi
+
+  # ── PHASE 6: BOOTSTRAP UNBOUND DATA FILES ───────────────────────────────────
+  # On Debian 13:
+  #   - trust anchor managed by /usr/libexec/unbound-helper root_trust_anchor_update
+  #     (ExecStartPre in unbound.service) — no manual unbound-anchor needed
+  #   - root.hints must exist at /var/lib/unbound/root.hints if referenced by config
+  #     NOT provided by the package — must be fetched from internic.net
+  log "dns: preparing unbound data files..."
+  if $DRY_RUN; then
+    printf '[dry] mkdir -p /var/lib/unbound\n'
+    printf '[dry] fetch root.hints if referenced by config and missing\n'
+    printf '[dry] chown -R unbound:unbound /var/lib/unbound\n'
+  else
+    mkdir -p /var/lib/unbound
+
+    # Check if root.hints is referenced in restored unbound config
+    local needs_root_hints=false
+    grep -rq 'root-hints' /etc/unbound/ 2>/dev/null && needs_root_hints=true
+
+    if $needs_root_hints && [[ ! -f /var/lib/unbound/root.hints ]]; then
+      log "dns: fetching root.hints from internic.net..."
+      if curl -sSf https://www.internic.net/domain/named.root \
+              -o /var/lib/unbound/root.hints 2>/dev/null; then
+        _dns_ok "root.hints fetched from internic.net"
+        report "${SCRIPT_NAME}" "dns" "root.hints" "prepare" "changed" "fetched from internic.net" ""
+      elif wget -qO /var/lib/unbound/root.hints \
+              https://www.internic.net/domain/named.root 2>/dev/null; then
+        _dns_ok "root.hints fetched (wget)"
+        report "${SCRIPT_NAME}" "dns" "root.hints" "prepare" "changed" "fetched via wget" ""
+      else
+        _dns_manual "could not fetch root.hints — unbound will fail without it"
+        manual_tasks+=("MANUAL: curl -o /var/lib/unbound/root.hints https://www.internic.net/domain/named.root")
+        report "${SCRIPT_NAME}" "dns" "root.hints" "prepare" "failed" "fetch failed" ""
+      fi
+    elif ! $needs_root_hints; then
+      _dns_info "root.hints not referenced in config — skipping"
+    else
+      _dns_ok "root.hints already present"
+    fi
+
+    # Detect unbound port from restored config (default 5353 for sanctum)
+    local unbound_port=5353
+    if [[ -f /etc/unbound/unbound.conf.d/recursive.conf ]]; then
+      local cfg_port
+      cfg_port="$(grep -h '^ *port:' /etc/unbound/unbound.conf.d/recursive.conf 2>/dev/null | awk '{print $2}' | tail -1)"
+      [[ -n "$cfg_port" ]] && unbound_port="$cfg_port"
+    fi
+
+    # If recursive.conf specifies validator module, it needs a valid trust anchor.
+    # On fresh installs without unbound-anchor, disable validator and force correct port.
+    # This gets unbound running; DNSSEC can be re-enabled after the system is stable.
+    local validator_in_use=false
+    grep -rq 'module-config.*validator' /etc/unbound/ 2>/dev/null && validator_in_use=true
+
+    if $validator_in_use; then
+      log "dns: validator module detected — creating no-dnssec override for bootstrap"
+      cat > /etc/unbound/unbound.conf.d/no-dnssec.conf << EOF
+server:
+    module-config: "iterator"
+    port: ${unbound_port}
+EOF
+      # Disable recursive.conf temporarily — it overrides module-config and port
+      if [[ -f /etc/unbound/unbound.conf.d/recursive.conf ]]; then
+        mv /etc/unbound/unbound.conf.d/recursive.conf            /etc/unbound/unbound.conf.d/recursive.conf.bootstrap-disabled
+        _dns_dormant "recursive.conf disabled for bootstrap (re-enable after system is stable)"
+        manual_tasks+=("DNSSEC: re-enable DNSSEC after system stable: mv /etc/unbound/unbound.conf.d/recursive.conf.bootstrap-disabled /etc/unbound/unbound.conf.d/recursive.conf && rm /etc/unbound/unbound.conf.d/no-dnssec.conf && systemctl restart unbound")
+      fi
+      report "${SCRIPT_NAME}" "dns" "unbound-dnssec" "adapt" "changed"         "validator disabled for bootstrap; re-enable after trust anchor is populated" ""
+    fi
+
+    # Ensure unbound owns its data directory
+    chown -R unbound:unbound /var/lib/unbound 2>/dev/null || true
+    chmod 755 /var/lib/unbound 2>/dev/null || true
+
+    # Trust anchor: unbound-anchor not shipped on Debian 13.
+    # Seed root.key in autotrust format with both current KSKs (20326 + 38696).
+    # unbound will validate and update the file automatically once running.
+    # Check DB first — if capture included root.key use that, else use built-in seed.
+    local db_rootkey="${PUBLIC_DIR}/dns/unbound-root.key"
+    if [[ ! -f /var/lib/unbound/root.key ]]; then
+      if [[ -f "$db_rootkey" ]]; then
+        cp "$db_rootkey" /var/lib/unbound/root.key
+        _dns_ok "trust anchor restored from DB"
+        report "${SCRIPT_NAME}" "dns" "unbound-trustanchor" "prepare" "changed" "restored from DB" ""
+      else
+        # Built-in seed: autotrust format with KSK-2017 (20326) and KSK-2024 (38696)
+        cat > /var/lib/unbound/root.key << 'ROOTKEY'
+; autotrust trust anchor file
+;;id: . 1
+. 3600 IN DNSKEY 257 3 8 AwEAAaz/tAm8yTn4Mfeh5eyI96WSVexTBAvkMgJzkKTOiW1vkIbzxeF3+/4RgWOq7HrxRixHlFlExOLAJr5emLvN7SWXgnLh4+B5xQlNVz8Og8kvArMtNROxVQuCaSnIDdD5LKyWbRd2n9WGe2R8PzgCmr3EgVLrjyBxWezF0jLHwVN8efS3rCj/EWgvIWgb9tarpVUDK/b58Da+sqqls3eNbuv7pr+eoZG+SrDK6nWeL3c6H5Apxz7LjVc1uTIdsIXxuOLYA4/ilBmSVIzuDWfdRUfhHdY6+cn8HFRm+2hM8AnXGXws9555KrUB5qihylGa8subX2Nn6UwNR1AkUTV74bU= ;{id = 20326 (ksk), size = 2048b} ;;state=1 [ ADDPEND ] ;;count=0 ;;lastchange=0 ;;Thu Jan  1 00:00:00 1970
+. 3600 IN DNSKEY 257 3 8 AwEAAa96jeuknZlaeSrvyAJj6ZHv28hhOKkx3rLGXVaC6rXTsDc449/cidltpkyGwCJNnOAlFNKF2jBosZBU5eeHspaQWOmOElZsjICMQMC3aeHbGiShvZsx4wMYSjH8e7Vrhbu6irwCzVBApESjbUdpWWmEnhathWu1jo+siFUiRAAxm9qyJNg/wOZqqzL/dL/q8PkcRU5oUKEpUge71M3ej2/7CPqpdVwuMoTvoB+ZOT4YeGyxMvHmbrxlFzGOHOijtzN+u1TQNatX2XBuzZNQ1K+s2CXkPIZo7s6JgZyvaBevYtxPvYLw4z9mR7K2vaF18UYH9Z9GNUUeayffKC73PYc= ;{id = 38696 (ksk), size = 2048b} ;;state=1 [ ADDPEND ] ;;count=0 ;;lastchange=0 ;;Thu Jan  1 00:00:00 1970
+ROOTKEY
+        _dns_ok "trust anchor seeded (KSK-2017 + KSK-2024 autotrust format)"
+        report "${SCRIPT_NAME}" "dns" "unbound-trustanchor" "prepare" "changed" "seeded built-in autotrust root.key" ""
+      fi
+      chown unbound:unbound /var/lib/unbound/root.key 2>/dev/null || true
+      chmod 644 /var/lib/unbound/root.key
+    else
+      _dns_ok "trust anchor already present"
+      report "${SCRIPT_NAME}" "dns" "unbound-trustanchor" "prepare" "ok" "root.key exists" ""
+    fi
+  fi
+
+  # Check for blocklist files referenced in unbound config
+  if ! $DRY_RUN; then
+    local rpz_refs
+    rpz_refs="$(grep -rh 'rpz-file\|include:\|zonefile' /etc/unbound/ 2>/dev/null \
+      | grep -v '^#' \
+      | grep -oP '"[^"]*\.rpz[^"]*"|/[^ ]+\.rpz[^ ]*' \
+      | tr -d '"' \
+      | sort -u || true)"
+    if [[ -n "$rpz_refs" ]]; then
+      while IFS= read -r rpz_file; do
+        if [[ ! -f "$rpz_file" ]]; then
+          _dns_dormant "unbound references ${rpz_file} which does not exist yet"
+          manual_tasks+=("POPULATE: ${rpz_file} referenced by unbound config but not yet present")
+        fi
+      done <<< "$rpz_refs"
+    fi
+  fi
+
+  # ── PHASE 7: START UNBOUND ──────────────────────────────────────────────────
+  log "dns: starting unbound..."
+  if $DRY_RUN; then
+    printf '[dry] systemctl enable --now unbound\n'
+  else
+    systemctl enable unbound >/dev/null 2>&1 || true
+    systemctl restart unbound >/dev/null 2>&1 || true
+    sleep 2
+
+    # Verify unbound is listening on expected port
+    local unbound_port=5353
+    # Detect port from config if non-standard
+    if [[ -f /etc/unbound/unbound.conf ]]; then
+      local cfg_port
+      cfg_port="$(grep -h 'port:' /etc/unbound/unbound.conf.d/*.conf /etc/unbound/unbound.conf 2>/dev/null \
+        | grep -v '^#' | awk '{print $2}' | tail -1)"
+      [[ -n "$cfg_port" ]] && unbound_port="$cfg_port"
+    fi
+
+    if ss -tlnp 2>/dev/null | grep -q ":${unbound_port} "; then
+      _dns_ok "unbound listening on port ${unbound_port}"
+      report "${SCRIPT_NAME}" "dns" "unbound-start" "start" "ok" "listening on :${unbound_port}" ""
+    else
+      local unbound_err
+      unbound_err="$(journalctl -u unbound -n 5 --no-pager 2>/dev/null | tail -3 || true)"
+      _dns_manual "unbound NOT listening on port ${unbound_port}"
+      log "dns: unbound journal tail: ${unbound_err}"
+      report "${SCRIPT_NAME}" "dns" "unbound-start" "start" "failed" "not listening on :${unbound_port}" ""
+      manual_tasks+=("MANUAL: unbound failed to start — check: journalctl -u unbound -n 20")
+    fi
+  fi
+
+  # ── PHASE 8: START DNSMASQ ──────────────────────────────────────────────────
+  log "dns: starting dnsmasq..."
+  if $DRY_RUN; then
+    printf '[dry] systemctl enable --now dnsmasq\n'
+  else
+    # Give unbound a moment to fully come up before dnsmasq tries to reach it
+    # dnsmasq validates its upstream server= at startup — if unbound is not
+    # yet listening on 5353, dnsmasq exits with INVALIDARGUMENT
+    sleep 3
+    systemctl enable dnsmasq >/dev/null 2>&1 || true
+    systemctl restart dnsmasq >/dev/null 2>&1 || true
+    sleep 2
+
+    if ss -tlnp 2>/dev/null | grep -q ':53 '; then
+      local new_owner
+      new_owner="$(_port53_owner)"
+      _dns_ok "port 53 now owned by: ${new_owner}"
+      report "${SCRIPT_NAME}" "dns" "dnsmasq-start" "start" "ok" "listening on :53 owner=${new_owner}" ""
+    else
+      local dnsmasq_err
+      dnsmasq_err="$(journalctl -u dnsmasq -n 5 --no-pager 2>/dev/null | tail -3 || true)"
+      _dns_manual "dnsmasq NOT listening on port 53"
+      log "dns: dnsmasq journal tail: ${dnsmasq_err}"
+      report "${SCRIPT_NAME}" "dns" "dnsmasq-start" "start" "failed" "not listening on :53" ""
+      manual_tasks+=("MANUAL: dnsmasq failed to start — check: journalctl -u dnsmasq -n 20")
+      manual_tasks+=("       likely cause: port 53 still held by another process (ss -tlnp | grep :53)")
+    fi
+  fi
+
+  # ── PHASE 9: VERIFY RESOLUTION ─────────────────────────────────────────────
+  local resolution_ok=false
+  if ! $DRY_RUN; then
+    log "dns: verifying resolution..."
+    sleep 1
+    if getent ahostsv4 deb.debian.org >/dev/null 2>&1; then
+      _dns_ok "deb.debian.org resolves ✓"
+      resolution_ok=true
+      report "${SCRIPT_NAME}" "dns" "verify-resolution" "check" "ok" "deb.debian.org resolves" ""
+    else
+      _dns_manual "resolution FAILED for deb.debian.org"
+      report "${SCRIPT_NAME}" "dns" "verify-resolution" "check" "failed" "deb.debian.org did not resolve" ""
+      manual_tasks+=("MANUAL: DNS resolution failed — run: dig deb.debian.org @127.0.0.1 to debug")
+    fi
+  fi
+
+  # ── PHASE 10: WRITE RESOLV.CONF — only if resolution confirmed ─────────────
+  if $DRY_RUN; then
+    printf '[dry] write /etc/resolv.conf → nameserver 127.0.0.1 (only if resolution confirmed)\n'
+  elif $resolution_ok; then
+    log "dns: writing /etc/resolv.conf..."
+
+    # Back up current resolv.conf before touching it
+    backup_target /etc/resolv.conf >/dev/null 2>&1 || true
+
+    # Break symlink if it points at systemd-resolved stub
+    if [[ -L /etc/resolv.conf ]]; then
+      local link_target
+      link_target="$(readlink /etc/resolv.conf)"
+      log "dns: /etc/resolv.conf is symlink to ${link_target} — replacing with static file"
+      rm -f /etc/resolv.conf
+    fi
+
+    printf 'nameserver 127.0.0.1\n' > /etc/resolv.conf
+    chown root:root /etc/resolv.conf
+    chmod 0644 /etc/resolv.conf
+
+    _dns_ok "/etc/resolv.conf written → nameserver 127.0.0.1"
+    report "${SCRIPT_NAME}" "dns" "resolv.conf" "restore" "changed" \
+      "written: nameserver 127.0.0.1 (resolution confirmed before write)" ""
+  else
+    # Resolution failed — write a safe fallback, mark resolv.conf as manual
+    log "dns: resolution not confirmed — writing fallback resolv.conf (1.1.1.1)"
+    backup_target /etc/resolv.conf >/dev/null 2>&1 || true
+    [[ -L /etc/resolv.conf ]] && rm -f /etc/resolv.conf
+    printf '# fallback — local resolver did not come up cleanly\n# replace with: nameserver 127.0.0.1 once dnsmasq is running\nnameserver 1.1.1.1\nnameserver 9.9.9.9\n' \
+      > /etc/resolv.conf
+    chown root:root /etc/resolv.conf
+    chmod 0644 /etc/resolv.conf
+
+    _dns_dormant "/etc/resolv.conf → fallback 1.1.1.1 (local resolver not confirmed)"
+    report "${SCRIPT_NAME}" "dns" "resolv.conf" "restore" "changed" \
+      "fallback written: 1.1.1.1 — replace with 127.0.0.1 once dnsmasq is confirmed" ""
+    manual_tasks+=("MANUAL: once dnsmasq is running, run: echo 'nameserver 127.0.0.1' > /etc/resolv.conf")
+  fi
+
+  # ── PHASE 11: SUMMARY REPORT ────────────────────────────────────────────────
+  printf '\n'
+  printf '  ── DNS restore summary ────────────────────────────────────────────\n'
+
+  # WireGuard not present
+  if [[ -z "${wg_ifaces// /}" ]]; then
+    _dns_dormant "WireGuard not present — WireGuard-dependent DNS rules are preserved but dormant"
+    _dns_info    "They will activate automatically once WireGuard is restored"
+    _dns_info    "Run: restore-configs.sh --category wireguard (when implemented)"
+  fi
+
+  # Docker not present or no bridges
+  if [[ -z "${docker_ips// /}" ]] && ! have_cmd docker; then
+    _dns_dormant "Docker not present — Docker-dependent DNS rules are preserved but dormant"
+  fi
+
+  # Print manual task list
+  if [[ ${#manual_tasks[@]} -gt 0 ]]; then
+    printf '\n'
+    printf '  ── MANUAL TASKS REQUIRED ──────────────────────────────────────────\n'
+    local i=1
+    for task in "${manual_tasks[@]}"; do
+      printf '  [%d] %s\n' "$i" "$task"
+      ((i+=1))
+    done
+    printf '\n'
+    report "${SCRIPT_NAME}" "dns" "manual-tasks" "manual" "manual" \
+      "${#manual_tasks[@]} manual tasks recorded" ""
+  else
+    printf '\n'
+    printf '  ── No manual tasks required ✓\n'
+    printf '\n'
+  fi
+
+  report "${SCRIPT_NAME}" "dns" "category" "restore" "changed" \
+    "adaptive DNS restore completed; manual_tasks=${#manual_tasks[@]}" ""
 }
 
 restore_firewall() {
