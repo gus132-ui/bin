@@ -1003,11 +1003,56 @@ ROOTKEY
     "adaptive DNS restore completed; manual_tasks=${#manual_tasks[@]}" ""
 }
 
+# ── Firewall output helpers ───────────────────────────────────────────────────
+_fw_ok()     { printf '  \033[32m✓\033[0m adapted    %s\n' "$*"; }
+_fw_dormant(){ printf '  \033[33m⚠\033[0m dormant    %s\n' "$*"; }
+_fw_manual() { printf '  \033[31m✗\033[0m MANUAL     %s\n' "$*"; }
+_fw_info()   { printf '  \033[36m·\033[0m            %s\n' "$*"; }
+
+_adapt_nftables() {
+  local src="$1" dst="$2"
+  local dormant_ifaces=()
+  local line tmp
+  tmp="$(mktemp)"
+
+  while IFS= read -r line; do
+    # Extract quoted interface name from iif/oif/iifname/oifname directives
+    # Skip wildcard patterns like br-*
+    # Pattern: keyword followed by whitespace and a quoted non-wildcard name
+    local ref_iface=""
+    if echo "$line" | grep -qE '(iif|oif|iifname|oifname)[[:space:]]+"[^"*]+"'; then
+      # Extract the interface name that immediately follows an iif/oif keyword
+      ref_iface="$(echo "$line" | sed -E 's/.*\b(iif|oif|iifname|oifname)[[:space:]]+"([^"*]+)".*/\2/' | grep -v "^$line$" || true)"
+    fi
+
+    if [[ -z "$ref_iface" ]]; then
+      printf '%s\n' "$line" >> "$tmp"
+      continue
+    fi
+
+    if ip link show "$ref_iface" >/dev/null 2>&1; then
+      printf '%s\n' "$line" >> "$tmp"
+    else
+      local reason="dormant"
+      [[ "$ref_iface" =~ ^wg ]] && reason="dormant-wireguard"
+      [[ "$ref_iface" == enx* || "$ref_iface" == eth* ]] && reason="dormant-hardware-nic"
+      printf '# [adapted:%s] %s\n' "$reason" "$line" >> "$tmp"
+      local already=false
+      local d
+      for d in "${dormant_ifaces[@]:-}"; do [[ "$d" == "$ref_iface" ]] && already=true; done
+      $already || dormant_ifaces+=("$ref_iface")
+    fi
+  done < "$src"
+
+  mv "$tmp" "$dst"
+  printf '%s\n' "${dormant_ifaces[@]:-}"
+}
+
 restore_firewall() {
   local base="${PUBLIC_DIR}/firewall"
   [[ -d "${base}" ]] || { mark_manual "${SCRIPT_NAME}" "firewall" "db" "missing ${base}"; return 0; }
 
-  if ! prompt_yes_no "Restore category 'firewall'? This can disrupt connectivity." no; then
+  if ! prompt_yes_no "Restore category 'firewall'? This will adapt and apply the captured ruleset." no; then
     report "${SCRIPT_NAME}" "firewall" "category" "restore" "skipped" "operator skipped category" ""
     return 0
   fi
@@ -1017,14 +1062,112 @@ restore_firewall() {
     return 0
   fi
 
-  maybe_restore "firewall" "nftables.conf" "${base}/nftables.conf" "/etc/nftables.conf"
-  maybe_restore "firewall" "nftables.d"    "${base}/nftables.d"    "/etc/nftables.d"
+  local fw_manual_tasks=()
 
-  if [[ ${DRY_RUN} == false && -f /etc/nftables.conf ]] && have_cmd nft; then
-    nft -c -f /etc/nftables.conf >/dev/null 2>&1 || note_failure "${SCRIPT_NAME}" "firewall" "validate" "check" "nftables config validation failed"
+  # ── ADAPT AND RESTORE NFTABLES.CONF ────────────────────────────────────────
+  if [[ -f "${base}/nftables.conf" ]]; then
+    log "firewall: adapting nftables.conf..."
+    if $DRY_RUN; then
+      printf '[dry] adapt nftables.conf → /etc/nftables.conf\n'
+    else
+      local adapted dormant_list
+      adapted="$(mktemp)"
+      dormant_list="$(_adapt_nftables "${base}/nftables.conf" "$adapted")"
+      cp "$adapted" /etc/nftables.conf
+      rm -f "$adapted"
+      chown root:root /etc/nftables.conf
+      chmod 0640 /etc/nftables.conf
+
+      if [[ -n "$dormant_list" ]]; then
+        local docker_dormant=false
+        while IFS= read -r iface; do
+          [[ -z "$iface" ]] && continue
+          if [[ "$iface" =~ ^wg ]]; then
+            _fw_dormant "rules for ${iface} commented out (WireGuard — activate when ${iface} exists)"
+            fw_manual_tasks+=("FIREWALL: ${iface} rules dormant — activate when WireGuard is up")
+          elif [[ "$iface" == enx* || "$iface" == eth* ]]; then
+            _fw_dormant "rules for ${iface} commented out (NIC not present — update if using different interface name)"
+            fw_manual_tasks+=("FIREWALL: ${iface} rules dormant — replace with actual NIC name in /etc/nftables.conf")
+          elif [[ "$iface" =~ ^br- || "$iface" == docker0 ]]; then
+            docker_dormant=true
+          else
+            _fw_dormant "rules for ${iface} commented out (interface not present)"
+            fw_manual_tasks+=("FIREWALL: ${iface} rules dormant — review /etc/nftables.conf")
+          fi
+        done <<< "$dormant_list"
+        if $docker_dormant; then
+          _fw_dormant "Docker bridge rules commented out (Docker not yet up — will activate automatically when Docker starts)"
+          fw_manual_tasks+=("FIREWALL: Docker bridge rules dormant — start Docker and rules will activate on next nftables reload")
+        fi
+        report "${SCRIPT_NAME}" "firewall" "nftables.conf" "restore" "changed" "adapted: dormant interfaces commented out" ""
+      else
+        _fw_ok "nftables.conf (no adaptation needed)"
+        report "${SCRIPT_NAME}" "firewall" "nftables.conf" "restore" "changed" "restored unchanged" ""
+      fi
+    fi
+  else
+    mark_manual "${SCRIPT_NAME}" "firewall" "nftables.conf" "not found in DB"
   fi
-}
 
+  # ── RESTORE NFTABLES.D ──────────────────────────────────────────────────────
+  if [[ -d "${base}/nftables.d" ]]; then
+    if $DRY_RUN; then
+      printf '[dry] restore nftables.d → /etc/nftables.d\n'
+    else
+      restore_path "${SCRIPT_NAME}" "firewall" "nftables.d" \
+        "${base}/nftables.d" "/etc/nftables.d" || true
+      _fw_ok "nftables.d restored"
+    fi
+  fi
+
+  # ── VALIDATE ────────────────────────────────────────────────────────────────
+  if ! $DRY_RUN && [[ -f /etc/nftables.conf ]] && have_cmd nft; then
+    local validate_out
+    validate_out="$(nft -c -f /etc/nftables.conf 2>&1)"
+    if [[ -z "$validate_out" ]]; then
+      _fw_ok "nftables.conf validates cleanly"
+      report "${SCRIPT_NAME}" "firewall" "validate" "check" "ok" "nft -c passed" ""
+    else
+      _fw_manual "nftables.conf validation errors:"
+      while IFS= read -r vline; do _fw_info "  $vline"; done <<< "$validate_out"
+      fw_manual_tasks+=("FIREWALL: fix remaining validation errors: sudo nft -c -f /etc/nftables.conf")
+      note_failure "${SCRIPT_NAME}" "firewall" "validate" "check" "nft -c failed"
+    fi
+  fi
+
+  # ── LOAD ────────────────────────────────────────────────────────────────────
+  if ! $DRY_RUN && [[ -f /etc/nftables.conf ]] && have_cmd nft; then
+    local load_out
+    load_out="$(nft -f /etc/nftables.conf 2>&1)"
+    if [[ -z "$load_out" ]]; then
+      _fw_ok "ruleset loaded successfully"
+      systemctl enable nftables >/dev/null 2>&1 || true
+      report "${SCRIPT_NAME}" "firewall" "load" "apply" "ok" "ruleset loaded" ""
+    else
+      _fw_manual "ruleset failed to load:"
+      while IFS= read -r lline; do _fw_info "  $lline"; done <<< "$load_out"
+      fw_manual_tasks+=("FIREWALL: load manually once fixed: sudo nft -f /etc/nftables.conf")
+      note_failure "${SCRIPT_NAME}" "firewall" "load" "apply" "nft load failed"
+    fi
+  fi
+
+  # ── SUMMARY ─────────────────────────────────────────────────────────────────
+  printf '\n  ── Firewall restore summary ───────────────────────────────────────\n'
+  if [[ ${#fw_manual_tasks[@]} -gt 0 ]]; then
+    printf '\n  ── MANUAL TASKS REQUIRED ──────────────────────────────────────────\n'
+    local i=1
+    for task in "${fw_manual_tasks[@]}"; do
+      printf '  [%d] %s\n' "$i" "$task"
+      ((i+=1))
+    done
+    printf '\n'
+  else
+    printf '  ── No manual tasks required ✓\n\n'
+  fi
+
+  report "${SCRIPT_NAME}" "firewall" "category" "restore" "changed" \
+    "adaptive firewall restore completed; manual_tasks=${#fw_manual_tasks[@]}" ""
+}
 restore_nginx() {
   local base="${PUBLIC_DIR}/nginx/etc-nginx"
   [[ -d "${base}" ]] || { mark_manual "${SCRIPT_NAME}" "nginx" "db" "missing ${base}"; return 0; }
