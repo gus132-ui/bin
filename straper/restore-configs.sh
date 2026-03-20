@@ -748,29 +748,14 @@ restore_dns() {
   else
     mkdir -p /var/lib/unbound
 
-    # Check if root.hints is referenced in restored unbound config
+    # root.hints will be fetched after DNS is confirmed working
+    # (fetch requires working DNS — moved to post-verification phase)
     local needs_root_hints=false
     grep -rq 'root-hints' /etc/unbound/ 2>/dev/null && needs_root_hints=true
-
-    if $needs_root_hints && [[ ! -f /var/lib/unbound/root.hints ]]; then
-      log "dns: fetching root.hints from internic.net..."
-      if curl -sSf https://www.internic.net/domain/named.root \
-              -o /var/lib/unbound/root.hints 2>/dev/null; then
-        _dns_ok "root.hints fetched from internic.net"
-        report "${SCRIPT_NAME}" "dns" "root.hints" "prepare" "changed" "fetched from internic.net" ""
-      elif wget -qO /var/lib/unbound/root.hints \
-              https://www.internic.net/domain/named.root 2>/dev/null; then
-        _dns_ok "root.hints fetched (wget)"
-        report "${SCRIPT_NAME}" "dns" "root.hints" "prepare" "changed" "fetched via wget" ""
-      else
-        _dns_manual "could not fetch root.hints — unbound will fail without it"
-        manual_tasks+=("MANUAL: curl -o /var/lib/unbound/root.hints https://www.internic.net/domain/named.root")
-        report "${SCRIPT_NAME}" "dns" "root.hints" "prepare" "failed" "fetch failed" ""
-      fi
-    elif ! $needs_root_hints; then
-      _dns_info "root.hints not referenced in config — skipping"
-    else
+    if [[ -f /var/lib/unbound/root.hints ]]; then
       _dns_ok "root.hints already present"
+    elif $needs_root_hints; then
+      _dns_info "root.hints needed — will fetch after DNS is confirmed working"
     fi
 
     # Detect unbound port from restored config (default 5353 for sanctum)
@@ -925,6 +910,22 @@ EOF
       _dns_manual "resolution FAILED for deb.debian.org"
       report "${SCRIPT_NAME}" "dns" "verify-resolution" "check" "failed" "deb.debian.org did not resolve" ""
       manual_tasks+=("MANUAL: DNS resolution failed — run: dig deb.debian.org @127.0.0.1 to debug")
+    fi
+  fi
+
+  # ── PHASE 9b: FETCH ROOT.HINTS — now that DNS works ────────────────────────
+  if ! $DRY_RUN && $needs_root_hints && [[ ! -f /var/lib/unbound/root.hints ]]; then
+    log "dns: fetching root.hints (DNS now confirmed working)..."
+    if curl -sSf https://www.internic.net/domain/named.root             -o /var/lib/unbound/root.hints 2>/dev/null; then
+      chown unbound:unbound /var/lib/unbound/root.hints 2>/dev/null || true
+      _dns_ok "root.hints fetched from internic.net"
+      report "${SCRIPT_NAME}" "dns" "root.hints" "prepare" "changed" "fetched post-DNS-verify" ""
+      # Restart unbound with root.hints now available
+      systemctl restart unbound >/dev/null 2>&1 || true
+      sleep 1
+    else
+      _dns_manual "could not fetch root.hints"
+      manual_tasks+=("MANUAL: curl -o /var/lib/unbound/root.hints https://www.internic.net/domain/named.root && systemctl restart unbound")
     fi
   fi
 
@@ -1145,7 +1146,8 @@ restore_firewall() {
     if [[ -z "$load_out" ]]; then
       _fw_ok "ruleset loaded successfully"
       systemctl enable nftables >/dev/null 2>&1 || true
-      report "${SCRIPT_NAME}" "firewall" "load" "apply" "ok" "ruleset loaded" ""
+      systemctl start nftables >/dev/null 2>&1 || true
+      report "${SCRIPT_NAME}" "firewall" "load" "apply" "ok" "ruleset loaded and service started" ""
     else
       _fw_manual "ruleset failed to load:"
       while IFS= read -r lline; do _fw_info "  $lline"; done <<< "$load_out"
@@ -1234,6 +1236,52 @@ restore_mariadb() {
       "normalized /etc/mysql ownership=root:root dirs=0755 files=0644" ""
   else
     report "${SCRIPT_NAME}" "mariadb" "etc-mysql" "restore" "skipped" "operator skipped" ""
+  fi
+}
+
+restore_postfix() {
+  local pub_base="${PUBLIC_DIR}/postfix"
+
+  if ! prompt_yes_no "Restore category 'postfix'?" no; then
+    report "${SCRIPT_NAME}" "postfix" "category" "restore" "skipped" "operator skipped category" ""
+    return 0
+  fi
+
+  if [[ -f "${pub_base}/main.cf" ]]; then
+    if prompt_yes_no "Restore postfix/main.cf -> /etc/postfix/main.cf?" yes; then
+      restore_path "${SCRIPT_NAME}" "postfix" "main.cf" \
+        "${pub_base}/main.cf" "/etc/postfix/main.cf" \
+        0644 root root || true
+    fi
+  fi
+
+  if [[ -f "${pub_base}/master.cf" ]]; then
+    if prompt_yes_no "Restore postfix/master.cf -> /etc/postfix/master.cf?" yes; then
+      restore_path "${SCRIPT_NAME}" "postfix" "master.cf" \
+        "${pub_base}/master.cf" "/etc/postfix/master.cf" \
+        0644 root root || true
+    fi
+  fi
+
+  if [[ -d "${pub_base}/etc-postfix" ]]; then
+    if prompt_yes_no "Restore postfix/etc-postfix -> /etc/postfix?" yes; then
+      restore_path "${SCRIPT_NAME}" "postfix" "etc-postfix" \
+        "${pub_base}/etc-postfix" "/etc/postfix" || true
+      chown -R root:root /etc/postfix 2>/dev/null || true
+      find /etc/postfix -type f -exec chmod 0644 {} + 2>/dev/null || true
+      find /etc/postfix -type d -exec chmod 0755 {} + 2>/dev/null || true
+      report "${SCRIPT_NAME}" "postfix" "metadata" "restore" "changed" \
+        "normalized /etc/postfix ownership=root:root dirs=0755 files=0644" ""
+    fi
+  fi
+
+  if have_cmd postfix; then
+    postfix set-permissions 2>/dev/null || true
+    if postfix check 2>/dev/null; then
+      report "${SCRIPT_NAME}" "postfix" "validate" "check" "ok" "postfix check passed" ""
+    else
+      note_failure "${SCRIPT_NAME}" "postfix" "validate" "check" "postfix check failed"
+    fi
   fi
 }
 
@@ -1534,6 +1582,61 @@ restore_monitoring() {
   fi
 }
 
+
+restore_tls() {
+  local sec_tls="${SECRET_DIR}/tls"
+
+  if ! prompt_yes_no "Restore category 'tls' (TLS certificates from secret DB)?" no; then
+    report "${SCRIPT_NAME}" "tls" "category" "restore" "skipped" "operator skipped category" ""
+    return 0
+  fi
+
+  if [[ ! -d "${sec_tls}/letsencrypt" ]]; then
+    mark_manual "${SCRIPT_NAME}" "tls" "db" "no letsencrypt certs found in secret DB at ${sec_tls}/letsencrypt"
+    return 0
+  fi
+
+  if prompt_yes_no "Restore TLS certs from secret DB -> /etc/letsencrypt?" yes; then
+    if $DRY_RUN; then
+      printf '[dry] restore %s → /etc/letsencrypt\n' "${sec_tls}/letsencrypt"
+    else
+      restore_path "${SCRIPT_NAME}" "tls" "letsencrypt"         "${sec_tls}/letsencrypt" "/etc/letsencrypt" || true
+      chown -R root:root /etc/letsencrypt 2>/dev/null || true
+      # Private keys: root:root 0600
+      find /etc/letsencrypt -name 'privkey*.pem' -exec chmod 0600 {} + 2>/dev/null || true
+      find /etc/letsencrypt -name 'privkey*.pem' -exec chown root:root {} + 2>/dev/null || true
+      # Certs: readable
+      find /etc/letsencrypt -name '*.pem' ! -name 'privkey*' -exec chmod 0644 {} + 2>/dev/null || true
+      find /etc/letsencrypt -type d -exec chmod 0755 {} + 2>/dev/null || true
+      report "${SCRIPT_NAME}" "tls" "letsencrypt" "restore" "changed"         "TLS certs restored; privkeys=0600 certs=0644" ""
+    fi
+
+    # Check cert expiry
+    if ! $DRY_RUN && have_cmd certbot; then
+      local expiry_out
+      expiry_out="$(certbot certificates 2>/dev/null | grep -E 'Domains|Expiry|Certificate Name' || true)"
+      if [[ -n "$expiry_out" ]]; then
+        printf '
+  ── TLS cert expiry ──────────────────────────────────────────────
+'
+        while IFS= read -r line; do printf '  %s
+' "$line"; done <<< "$expiry_out"
+        printf '
+'
+      fi
+      report "${SCRIPT_NAME}" "tls" "expiry-check" "check" "ok" "certbot certificates checked" ""
+    fi
+
+    # Reload nginx if running
+    if ! $DRY_RUN && have_cmd nginx && nginx -t >/dev/null 2>&1; then
+      systemctl reload nginx 2>/dev/null || systemctl start nginx 2>/dev/null || true
+      report "${SCRIPT_NAME}" "tls" "nginx-reload" "apply" "ok" "nginx reloaded with new certs" ""
+    fi
+  fi
+
+  report "${SCRIPT_NAME}" "tls" "category" "restore" "changed" "TLS restore completed" ""
+}
+
 for category in "${CATEGORIES[@]}"; do
   log "processing category: ${category}"
   case "${category}" in
@@ -1551,6 +1654,7 @@ for category in "${CATEGORIES[@]}"; do
     i2pd)          restore_i2pd ;;
     docker)        restore_docker ;;
     monitoring)    restore_monitoring ;;
+    tls)           restore_tls ;;
     *) note_failure "${SCRIPT_NAME}" "category" "${category}" "restore" "unknown category" ;;
   esac
 done
