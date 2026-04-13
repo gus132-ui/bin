@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+
+import re
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+URI_RE = re.compile(r'aesgcm://[^\s<>"\']+')
+
+if len(sys.argv) != 2:
+    print("usage: profanity-aesgcm-watch /path/to/chat.log", file=sys.stderr)
+    sys.exit(1)
+
+log_path = Path(sys.argv[1])
+if not log_path.exists():
+    print(f"log file not found: {log_path}", file=sys.stderr)
+    sys.exit(1)
+
+seen = set()
+
+with log_path.open("r", encoding="utf-8", errors="replace") as f:
+    f.seek(0, 2)  # start at end
+
+    while True:
+        line = f.readline()
+        if not line:
+            time.sleep(0.5)
+            continue
+
+        m = URI_RE.search(line)
+        if not m:
+            continue
+
+        uri = m.group(0)
+        if uri in seen:
+            continue
+
+        seen.add(uri)
+
+        subprocess.run(
+            [str(Path.home() / ".local/bin/profanity-aesgcm-handler"), uri],
+            check=False,
+        )
+

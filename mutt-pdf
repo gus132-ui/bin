@@ -1,5 +1,2 @@
 #!/bin/sh
-mkdir -p ~/Downloads/mail
-dest=~/Downloads/mail/mutt_$$.pdf
-cp "$1" "$dest"
-zathura "$dest"
+exec zathura "$1"

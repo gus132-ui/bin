@@ -1,0 +1,3 @@
+#!/bin/sh
+cd "$HOME/opt/Electrum-4.7.0" || exit 1
+exec ./run_electrum

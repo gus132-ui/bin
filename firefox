@@ -1,4 +1,0 @@
-#!/bin/sh
-exec firejail --profile=/etc/firejail/firefox-esr.profile \
-  /usr/bin/firefox-esr --no-remote "$@"
-

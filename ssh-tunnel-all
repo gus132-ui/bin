@@ -1,0 +1,31 @@
+#!/usr/bin/env zsh
+set -euo pipefail
+
+SOCK="${XDG_RUNTIME_DIR:-/tmp}/sanctum-all.sock"
+HOST="lukasz@192.168.33.5"
+PORT="57385"
+
+if [[ -S "$SOCK" ]]; then
+  if ssh -S "$SOCK" -O check -p "$PORT" "$HOST" >/dev/null 2>&1; then
+    echo "Tunnel already running"
+    exit 0
+  else
+    rm -f "$SOCK"
+  fi
+fi
+
+ssh -fN \
+  -M \
+  -S "$SOCK" \
+  -p "$PORT" \
+  -L 127.0.0.1:18080:127.0.0.1:8080 \
+  -L 127.0.0.1:8502:127.0.0.1:8502 \
+  -L 127.0.0.1:5055:127.0.0.1:5055 \
+  -L 127.0.0.1:8000:127.0.0.1:8000 \
+  -L 127.0.0.1:4444:127.0.0.1:4444 \
+  -L 127.0.0.1:7070:127.0.0.1:7070 \
+  -L 127.0.0.1:7659:127.0.0.1:7659 \
+  -L 127.0.0.1:7660:127.0.0.1:7660 \
+  "$HOST"
+
+echo "Tunnel started"

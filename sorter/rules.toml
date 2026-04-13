@@ -29,6 +29,15 @@ supported_extensions = [
     ".xls",
     ".md",
     ".odt",
+    ".sh",
+    ".py",
+    ".js",
+    ".ts",
+    ".html",
+    ".css",
+    ".json",
+    ".yaml",
+    ".toml",
 ]
 
 # ── Categories ────────────────────────────────────────────────────────────────
@@ -79,6 +88,10 @@ filename_keywords = [
     "akw",
 ]
 
+[[categories]]
+name = "Code"
+description = "Scripts and source code files"
+filename_keywords = [".sh", ".py", ".js", ".ts", ".html", ".css", ".json", ".yaml", ".toml"]
 # ── Add more categories below ─────────────────────────────────────────────────
 
 # [[categories]]

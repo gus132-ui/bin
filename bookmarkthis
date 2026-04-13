@@ -5,57 +5,36 @@ file="$HOME/.snippets"
 mkdir -p "$(dirname "$file")"
 touch "$file"
 
-# wybierz JEDNO:
-bookmark="$(xclip -o -selection primary 2>/dev/null || true)"     # zaznaczenie myszką
-# bookmark="$(xclip -o -selection clipboard 2>/dev/null || true)"    # Ctrl+C
+# Choose ONE source:
+bookmark="$(xclip -o -selection primary 2>/dev/null || true)"    # mouse highlight
+# bookmark="$(xclip -o -selection clipboard 2>/dev/null || true)" # Ctrl+C clipboard
 
-# usuń końcowe nowe linie (częste przy kopiowaniu)
-bookmark="$(printf '%s' "$bookmark" | sed -e 's/[[:space:]]\+$//')"
+# Strip trailing whitespace/newlines (common when copying)
+bookmark="$(printf '%s' "$bookmark" | sed 's/[[:space:]]\+$//')"
 
 if [ -z "$bookmark" ]; then
   notify-send "No string highlighted!" "Please select/copy a string to bookmark"
   exit 1
 fi
 
-# literalne dopasowanie całej linii
-if grep -Fxq -- "$bookmark" "$file"; then
+# Duplicate check: strip tab-separated comments before comparing
+if awk -F'\t' '{print $1}' "$file" | grep -Fxq -- "$bookmark"; then
   notify-send "Oops" "Already Bookmarked!"
   exit 0
 fi
 
-# edycja w dmenu: domyślnie pokazuje już wartość
+# Optionally edit the bookmark text before saving
 bookmarkEdit="$(printf '%s' "$bookmark" | dmenu -p "Edit bookmark:")"
+out="${bookmarkEdit:-$bookmark}"
 
-# jeśli ESC albo pusto -> użyj oryginału
-if [ -z "${bookmarkEdit:-}" ]; then
-  out="$bookmark"
+# Optionally add a comment (shown in dmenu search, not pasted)
+comment="$(printf '' | dmenu -p "Add comment (optional):")"
+
+if [ -n "${comment:-}" ]; then
+  line="$(printf '%s\t# %s' "$out" "$comment")"
 else
-  out="$bookmarkEdit"
+  line="$out"
 fi
 
-# zapisz jako nową linię
-printf '%s\n' "$out" >> "$file"
+printf '%s\n' "$line" >> "$file"
 notify-send "Bookmark added!" "$out is now saved to the file"
-
-# bookmark="$(xclip -o)"
-# file="${HOME}/.snippets"
-# 
-# if [ -z "$bookmark" ]
-# then
-# 	notify-send "No string highlighted!" "Please select a string to bookmark"
-# 	exit 1
-# else
-# 	if grep -q "^$bookmark$" "$file"; then
-# 		notify-send "Oops" "Already Bookmarked!"
-# 	else
-# 		bookmarkEdit=$(:|dmenu -p "Make changes to the bookmark: $bookmark" & sleep 0.1 && xdotool type $bookmark)
-# 		if [ -z "$bookmarkEdit" ]
-# 		then
-# 			notify-send "Bookmark added!" "$bookmark is now saved to the file"
-# 			echo "$bookmark" >> $file
-# 		else
-# 			notify-send "Bookmark added!" "$bookmarkEdit is now saved to the file"
-# 			echo "$bookmarkEdit" >> "$file"
-# 		fi
-# 	fi
-# fi

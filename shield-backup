@@ -13,7 +13,6 @@ LUKS_NAME="shield"
 LUKS_MOUNTPOINT="/mnt/shield"
 
 # Local folders to back up with rsync → LUKS volume
-# Each folder will be mirrored into ${LUKS_MOUNTPOINT}/<basename-of-folder>
 BACKUP_ITEMS=(
     "$HOME/"
     "/media/.secrets/"
@@ -24,11 +23,48 @@ MACHINE_DIR="T480"
 
 #################### INTERNALS – NO NEED TO EDIT ############
 
+RSYNC_EXCLUDES_FILE="/tmp/rsync_excludes_$$.txt"
+
+cat > "${RSYNC_EXCLUDES_FILE}" <<'EOF'
+# Caches & regenerable state
+.cache/
+.fasd
+.viminfo
+.zcompdump
+.sqlite_history
+.wget-hsts
+.dbus/
+.Xauthority
+.pki/
+tmp/
+
+# Browser internals
+.mozilla/firefox/*/cache2/
+.mozilla/firefox/*/storage/
+.mozilla/firefox/*/datareporting/
+.mullvad-browser/*/cache2/
+.mullvad-browser/*/storage/
+
+# Crypto node data (re-syncs)
+.bitmonero/
+.shared-ringdb/
+
+# Large reinstallable tooling
+.cargo/registry
+.cargo/git
+.texlive2025/
+
+# Java runtime junk
+.java/
+EOF
+
 need_cmd() { command -v "$1" >/dev/null 2>&1 || { echo "ERROR: missing command: $1" >&2; exit 1; }; }
 
 cleanup() {
     echo
     echo ">>> Cleaning up..."
+
+    rm -f "${RSYNC_EXCLUDES_FILE}"
 
     # Try to unmount, if mounted
     if mountpoint -q "${LUKS_MOUNTPOINT}"; then
@@ -86,9 +122,9 @@ sudo mkdir -p \
   "${LUKS_MOUNTPOINT}/SP_Skyscale"
 
 echo ">>> Starting rclone syncs (SharePoint -> ${LUKS_MOUNTPOINT}/SP_*)..."
-rclone sync 'SP_Administration:' "${LUKS_MOUNTPOINT}/SP_Administration" --create-empty-src-dirs --fast-list --progress
-rclone sync 'SP_Operations:'    "${LUKS_MOUNTPOINT}/SP_Operations"    --create-empty-src-dirs --fast-list --progress
-rclone sync 'SP_SkyscaleCommerce:'      "${LUKS_MOUNTPOINT}/SP_Skyscale"      --create-empty-src-dirs --fast-list --progress
+rclone sync 'SP_Administration:'    "${LUKS_MOUNTPOINT}/SP_Administration" --create-empty-src-dirs --fast-list --progress
+rclone sync 'SP_Operations:'        "${LUKS_MOUNTPOINT}/SP_Operations"     --create-empty-src-dirs --fast-list --progress
+rclone sync 'SP_SkyscaleCommerce:'  "${LUKS_MOUNTPOINT}/SP_Skyscale"       --create-empty-src-dirs --fast-list --progress
 echo ">>> All rclone syncs finished."
 
 echo ">>> Starting rsync backups of local folders -> ${LUKS_MOUNTPOINT}/${MACHINE_DIR}/..."
@@ -96,9 +132,6 @@ echo ">>> Starting rsync backups of local folders -> ${LUKS_MOUNTPOINT}/${MACHIN
 # Ensure machine root exists
 sudo mkdir -p "${LUKS_MOUNTPOINT}/${MACHINE_DIR}"
 
-# Explicit destination mapping while keeping your BACKUP_ITEMS sources as-is
-# - "$HOME/"          -> /mnt/shield/T480/HOME
-# - "/media/.secrets/"-> /mnt/shield/T480/secrets
 for SRC in "${BACKUP_ITEMS[@]}"; do
     if [ ! -d "$SRC" ]; then
         echo ">>> WARNING: source folder does not exist, skipping: $SRC"
@@ -113,8 +146,6 @@ for SRC in "${BACKUP_ITEMS[@]}"; do
             RELDEST="${MACHINE_DIR}/secrets"
             ;;
         *)
-            # Fallback (shouldn't happen with your current BACKUP_ITEMS)
-            # Note: basename "$SRC" with trailing slash becomes "home"; avoid relying on it.
             NAME="$(basename "${SRC%/}")"
             RELDEST="${MACHINE_DIR}/${NAME}"
             ;;
@@ -125,6 +156,7 @@ for SRC in "${BACKUP_ITEMS[@]}"; do
 
     echo ">>> rsync: ${SRC} -> ${DEST}"
     rsync -a --delete --progress \
+        --exclude-from="${RSYNC_EXCLUDES_FILE}" \
         "${SRC%/}/" \
         "${DEST}/"
 done
@@ -132,4 +164,3 @@ done
 echo ">>> All rsync backups finished."
 echo ">>> Unmounting and closing LUKS (via trap)..."
 # cleanup() will run automatically on script exit
-

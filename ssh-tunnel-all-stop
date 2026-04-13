@@ -1,0 +1,8 @@
+#!/usr/bin/env zsh
+set -euo pipefail
+
+SOCK="${XDG_RUNTIME_DIR:-/tmp}/sanctum-all.sock"
+HOST="lukasz@192.168.33.5"
+PORT="57385"
+
+ssh -S "$SOCK" -O exit -p "$PORT" "$HOST"

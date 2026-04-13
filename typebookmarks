@@ -1,5 +1,15 @@
-#! /bin/sh
+#!/bin/sh
+# Bind this script to a shortcut key in dwm config.h
+# Lines starting with # are section headers and hidden from results
+# Tab-separated comments are shown in dmenu for context but stripped before pasting
 
-# map this script as a shortcut key for dwm in config.h
+xdotool type "$(grep -v '^#' "$HOME/.snippets" | dmenu -i -l 50 | sed 's/\t.*//')"
+```
 
-xdotool type "$(grep -v '^#' ${HOME}/.snippets | dmenu -i -l 50 | sed 's/\s*#.*//')"
+---
+
+In `.snippets` manually edited it looks like this (tab between bookmark and `# comment`):
+```
+# --- git ---
+git log --oneline --graph --all	# pretty git tree
+git reset --soft HEAD~1	# undo last commit

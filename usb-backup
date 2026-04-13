@@ -3,29 +3,36 @@ set -euo pipefail
 
 #################### CONFIG ####################
 
-# LUKS2 container UUID (LUKS header UUID)
 LUKS_SOURCE="/dev/disk/by-uuid/bdd2a016-b6db-493d-ad0a-e8dd8a93dfbd"
-
-# Name for /dev/mapper/<name>
 MAPPER_NAME="usb_safe"
-
-# Mountpoint for decrypted filesystem
 MOUNTPOINT="/mnt/usb_safe"
-
-# Optional underlying block device for power-off (set "" to disable)
 RAW_DEVICE=""
 
-# Items to mirror from $HOME to the encrypted drive (files and directories)
+# Source vault (docs/vault)
+SOURCE_VAULT_MOUNT="$HOME/docs/vault"
+SOURCE_VAULT_IMAGE="$HOME/secure/containers/work-vault.img"
+SOURCE_VAULT_MAPPER="vault"
+
+# Tomb
+SECRETS_TOMB_FILE="$HOME/.secrets.tomb"
+SECRETS_TOMB_KEY="$HOME/.secrets.tomb.key"
+SECRETS_TOMB_MOUNT="/media/.secrets"
+
 BACKUP_ITEMS=(
   "$HOME/.abook"
   "$HOME/.config"
-  "$HOME/Documents"
-  "$HOME/dotfiles"
+  "$HOME/docs"
+  "$HOME/git"
   "$HOME/.password-store"
   "$HOME/secure"
-  "$HOME/vimwiki"
   "$HOME/.password.tomb"
+  "$HOME/.password.tomb.key"
   "$HOME/.secrets.tomb"
+  "$HOME/.secrets.tomb.key"
+  "/media/.secrets"
+  "$HOME/.bitmonero"
+  "$HOME/.electrum"
+  "$HOME/.zotero-data"
 )
 
 RSYNC_OPTS=(
@@ -48,108 +55,144 @@ die() { echo "ERROR: $*" >&2; exit 1; }
 is_mapper_open() { [[ -e "/dev/mapper/${MAPPER_NAME}" ]]; }
 is_mounted()     { mountpoint -q "${MOUNTPOINT}"; }
 
-busy_report() {
-  echo ">>> Busy report for ${MOUNTPOINT}:"
-  echo ">>> lsof:"
-  sudo lsof +f -- "${MOUNTPOINT}" || true
-  echo ">>> fuser:"
-  sudo fuser -vm "${MOUNTPOINT}" || true
+require_mount() {
+  local path="$1"
+  local label="$2"
+  [[ -e "$path" ]] || die "${label} path missing: ${path}"
+  mountpoint -q "$path" || die "${label} is not mounted: ${path}"
+}
+
+OPENED_SOURCE_VAULT=0
+OPENED_SECRETS_TOMB=0
+
+ensure_source_vault_open() {
+  if mountpoint -q "${SOURCE_VAULT_MOUNT}"; then
+    echo ">>> Source vault already mounted"
+    return
+  fi
+
+  echo ">>> Opening source vault..."
+  mkdir -p "${SOURCE_VAULT_MOUNT}"
+
+  if [[ ! -e "/dev/mapper/${SOURCE_VAULT_MAPPER}" ]]; then
+    sudo cryptsetup open "${SOURCE_VAULT_IMAGE}" "${SOURCE_VAULT_MAPPER}"
+  fi
+
+  sudo mount "/dev/mapper/${SOURCE_VAULT_MAPPER}" "${SOURCE_VAULT_MOUNT}"
+  OPENED_SOURCE_VAULT=1
+}
+
+ensure_secrets_tomb_open() {
+  if mountpoint -q "${SECRETS_TOMB_MOUNT}"; then
+    echo ">>> Secrets tomb already mounted"
+    return
+  fi
+
+  echo ">>> Opening secrets tomb..."
+  tomb open "${SECRETS_TOMB_FILE}" -k "${SECRETS_TOMB_KEY}" "${SECRETS_TOMB_MOUNT}"
+  OPENED_SECRETS_TOMB=1
 }
 
 cleanup() {
   set +e
 
   if is_mounted; then
-    echo ">>> Unmounting ${MOUNTPOINT}..."
-    sudo umount "${MOUNTPOINT}" || {
-      echo ">>> Unmount failed (device busy)."
-      busy_report
-      echo ">>> Last resort: sudo umount -l '${MOUNTPOINT}'"
-    }
+    echo ">>> Unmounting backup drive..."
+    sudo umount "${MOUNTPOINT}" || true
   fi
 
   if is_mapper_open; then
-    echo ">>> Closing LUKS mapper ${MAPPER_NAME}..."
+    echo ">>> Closing backup mapper..."
     sudo cryptsetup close "${MAPPER_NAME}" || true
   fi
 
+  if [[ "${OPENED_SECRETS_TOMB}" -eq 1 ]]; then
+    echo ">>> Closing secrets tomb..."
+    tomb close "${SECRETS_TOMB_MOUNT}" || true
+  fi
+
+  if [[ "${OPENED_SOURCE_VAULT}" -eq 1 ]]; then
+    echo ">>> Closing source vault..."
+    sudo umount "${SOURCE_VAULT_MOUNT}" || true
+    sudo cryptsetup close "${SOURCE_VAULT_MAPPER}" || true
+  fi
+
   if [[ -n "${RAW_DEVICE}" ]]; then
-    echo ">>> Powering off ${RAW_DEVICE}..."
     udisksctl power-off -b "${RAW_DEVICE}" >/dev/null 2>&1 || true
   fi
 }
 
 trap cleanup EXIT
 
-#################### OPEN + MOUNT ####################
+#################### OPEN DESTINATION ####################
 
-echo ">>> Checking LUKS source exists: ${LUKS_SOURCE}"
-[[ -e "${LUKS_SOURCE}" ]] || die "LUKS source not found: ${LUKS_SOURCE}"
-
-echo ">>> Ensuring mountpoint exists: ${MOUNTPOINT}"
+echo ">>> Ensuring backup mountpoint exists..."
 sudo mkdir -p "${MOUNTPOINT}"
 
-is_mounted     && die "Mountpoint already in use: ${MOUNTPOINT}"
-is_mapper_open && die "Mapper already open: /dev/mapper/${MAPPER_NAME}"
+if is_mounted; then
+  echo ">>> Backup drive already mounted at ${MOUNTPOINT}"
+elif is_mapper_open; then
+  echo ">>> Backup mapper already open, mounting..."
+  sudo mount "/dev/mapper/${MAPPER_NAME}" "${MOUNTPOINT}"
+else
+  echo ">>> Opening backup LUKS..."
+  sudo cryptsetup open "${LUKS_SOURCE}" "${MAPPER_NAME}"
+  echo ">>> Mounting backup filesystem..."
+  sudo mount "/dev/mapper/${MAPPER_NAME}" "${MOUNTPOINT}"
+fi
 
-echo ">>> Opening LUKS2 container (prompt for passphrase)..."
-sudo cryptsetup open --type luks2 "${LUKS_SOURCE}" "${MAPPER_NAME}"
+#################### OPEN SOURCES ####################
 
-echo ">>> Mounting decrypted filesystem..."
-sudo mount "/dev/mapper/${MAPPER_NAME}" "${MOUNTPOINT}"
+ensure_source_vault_open
+ensure_secrets_tomb_open
 
-echo ">>> Mounted at ${MOUNTPOINT}"
-echo ">>> Logging rsync output to: ${LOGFILE}"
-echo "[$(date)] Backup run started" >> "${LOGFILE}"
+require_mount "${SOURCE_VAULT_MOUNT}" "Vault"
+require_mount "${SECRETS_TOMB_MOUNT}" "Secrets"
 
-#################### RSYNC LOOP ####################
+#################### BACKUP ####################
+
+echo "[$(date)] Backup start" >> "$LOGFILE"
 
 ANY_WARNING=0
 
 for SRC in "${BACKUP_ITEMS[@]}"; do
-  [[ -e "${SRC}" ]] || die "Missing source item: ${SRC}"
+  [[ -e "${SRC}" ]] || die "Missing: ${SRC}"
 
   NAME="$(basename "${SRC}")"
   DEST="${MOUNTPOINT}/${NAME}"
 
-  echo ">>> rsync: ${SRC} -> ${DEST}"
-  echo "[$(date)] rsync: ${SRC} -> ${DEST}" >> "${LOGFILE}"
+  echo ">>> ${SRC} -> ${DEST}"
+  echo "[$(date)] rsync: ${SRC} -> ${DEST}" >> "$LOGFILE"
 
   set +e
   if [[ -d "${SRC}" ]]; then
-    rsync "${RSYNC_OPTS[@]}" "${SRC}/" "${DEST}/" 2>> "${LOGFILE}"
+    rsync "${RSYNC_OPTS[@]}" "${SRC}/" "${DEST}/" 2>>"$LOGFILE"
   else
-    # file
-    rsync "${RSYNC_OPTS[@]}" "${SRC}" "${DEST}" 2>> "${LOGFILE}"
+    rsync "${RSYNC_OPTS[@]}" "${SRC}" "${DEST}" 2>>"$LOGFILE"
   fi
   RS=$?
   set -e
 
   if [[ "${RS}" -eq 0 ]]; then
     echo ">>> rsync OK: ${SRC}"
-    echo "[$(date)] rsync OK: ${SRC}" >> "${LOGFILE}"
+    echo "[$(date)] rsync OK: ${SRC}" >> "$LOGFILE"
   elif [[ "${RS}" -eq 23 || "${RS}" -eq 24 ]]; then
     echo ">>> WARNING: rsync non-critical issues (code ${RS}) for: ${SRC}"
-    echo ">>> See ${LOGFILE}."
-    echo "[$(date)] WARNING: rsync code ${RS} for: ${SRC}" >> "${LOGFILE}"
+    echo "[$(date)] WARNING: rsync code ${RS} for: ${SRC}" >> "$LOGFILE"
     ANY_WARNING=1
   else
-    echo "[$(date)] ERROR: rsync failed code ${RS} for: ${SRC}" >> "${LOGFILE}"
+    echo "[$(date)] ERROR: rsync failed code ${RS} for: ${SRC}" >> "$LOGFILE"
     exit "${RS}"
   fi
 done
 
-echo ">>> Backup loop finished."
 if [[ "${ANY_WARNING}" -eq 1 ]]; then
-  echo ">>> Backup completed WITH WARNINGS. See ${LOGFILE}."
-  echo "[$(date)] Backup completed WITH WARNINGS" >> "${LOGFILE}"
+  echo ">>> Backup completed WITH WARNINGS"
+  echo "[$(date)] Backup completed WITH WARNINGS" >> "$LOGFILE"
 else
-  echo ">>> Backup completed OK."
-  echo "[$(date)] Backup completed OK" >> "${LOGFILE}"
+  echo ">>> Backup completed OK"
+  echo "[$(date)] Backup completed OK" >> "$LOGFILE"
 fi
 
-echo ">>> Syncing..."
+echo ">>> Done"
 sync
-
-echo ">>> Done. (Auto-cleanup will unmount + close mapper.)"
-

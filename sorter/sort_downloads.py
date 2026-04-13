@@ -215,11 +215,11 @@ def main():
         sys.exit(1)
 
     parser = argparse.ArgumentParser(
-        description="Sort ~/Downloads using rules defined in rules.toml"
+        description="Sort ~/downloads using rules defined in rules.toml"
     )
     parser.add_argument(
         "--dir",
-        default=str(Path.home() / "Downloads"),
+        default=str(Path.home() / "downloads"),
         help="Path to Downloads folder (default: ~/Downloads)",
     )
     parser.add_argument(
@@ -246,6 +246,7 @@ def main():
 
     extensions = set(config.get("supported_extensions", [
         ".pdf", ".docx", ".doc", ".txt", ".xlsx", ".xls", ".md", ".odt"
+        ".sh", ".py", ".js", ".ts", ".html", ".css", ".json", ".yaml", ".toml"
     ]))
 
     if args.list_rules:
