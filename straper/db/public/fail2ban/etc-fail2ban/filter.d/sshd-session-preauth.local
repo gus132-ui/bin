@@ -1,7 +1,0 @@
-[INCLUDES]
-before = sshd.conf
-
-[Definition]
-failregex = %(known/failregex)s
-            ^Invalid user .+ from <HOST>
-            ^User .+ from <HOST> not allowed because not listed in AllowUsers

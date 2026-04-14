@@ -1,3 +1,0 @@
-NAME              SIZE  ALLOC   FREE  CKPOINT  EXPANDSZ   FRAG    CAP  DEDUP    HEALTH  ALTROOT
-tank              162G  45.8G   116G        -         -    33%    28%  1.00x    ONLINE  -
-  vg_zfs/lv_zfs   163G  45.8G   116G        -         -    33%  28.2%      -    ONLINE

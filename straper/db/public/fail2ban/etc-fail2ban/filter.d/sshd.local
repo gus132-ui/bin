@@ -1,3 +1,0 @@
-[Definition]
-failregex = ^%(__prefix_line)sConnection closed by authenticating user .* \[preauth\]$
-

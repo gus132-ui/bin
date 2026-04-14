@@ -1,9 +1,0 @@
-server {
-    listen 9080;
-    server_name labunix.xyz www.labunix.xyz cloud.labunix.xyz vpn.labunix.xyz; 
-
-    root /var/www/labunix;
-    index index.html;
-}
-
-

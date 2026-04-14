@@ -1,0 +1,37 @@
+#!/bin/sh
+set -eu
+
+file="$HOME/.bookmarks"
+touch "$file"
+
+has_notify=$(command -v notify-send >/dev/null 2>&1 && echo 1 || echo 0)
+notify() { [ "$has_notify" = 1 ] && notify-send -u "$1" "bookmark" "$2" || true; }
+
+# Primary selection first, fall back to clipboard
+bookmark="$(xclip -o -selection primary 2>/dev/null || true)"
+[ -z "$bookmark" ] && bookmark="$(xclip -o -selection clipboard 2>/dev/null || true)"
+
+bookmark="$(printf '%s' "$bookmark" | sed 's/[[:space:]]\+$//')"
+
+if [ -z "$bookmark" ]; then
+  notify critical "Nothing selected or in clipboard"
+  exit 1
+fi
+
+if awk -F'\t' '{print $1}' "$file" | grep -Fxq -- "$bookmark"; then
+  notify low "Already bookmarked"
+  exit 0
+fi
+
+bookmarkEdit="$(printf '%s' "$bookmark" | dmenu -p "Edit bookmark:")"
+out="${bookmarkEdit:-$bookmark}"
+
+comment="$(printf '' | dmenu -p "Add comment (optional):")"
+if [ -n "${comment:-}" ]; then
+  line="$(printf '%s\t# %s' "$out" "$comment")"
+else
+  line="$out"
+fi
+
+printf '%s\n' "$line" >> "$file"
+notify normal "Saved: $out"

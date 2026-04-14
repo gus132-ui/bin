@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+OUTFILE="${OUTFILE:-$HOME/.clips}"
+HAS_NOTIFY=$(command -v notify-send >/dev/null 2>&1 && echo 1 || echo 0)
+
+notify() {
+  [[ "$HAS_NOTIFY" == 1 ]] && notify-send -u "$1" "$2" "$3"
+}
+
+die() {
+  notify critical "capture-clip" "$1"
+  printf 'ERROR: %s\n' "$1" >&2
+  exit 1
+}
+
+get_clipboard() {
+  local out
+  if command -v xclip >/dev/null 2>&1; then
+    out="$(xclip -o -selection clipboard 2>/dev/null)"
+    [[ -z "$out" ]] && out="$(xclip -o -selection primary 2>/dev/null)"
+    printf '%s' "$out"; return
+  fi
+  if command -v xsel >/dev/null 2>&1; then
+    out="$(xsel --clipboard --output 2>/dev/null)"
+    [[ -z "$out" ]] && out="$(xsel --primary --output 2>/dev/null)"
+    printf '%s' "$out"; return
+  fi
+  die "need xclip or xsel"
+}
+
+clip="$(get_clipboard)"
+[[ -n "$clip" ]] || die "clipboard is empty"
+
+ts="$(date '+%Y-%m-%d %H:%M:%S')"
+{
+  printf '# captured %s\n' "$ts"
+  printf '%s\n' "$clip"
+  printf -- '---\n'
+} >> "$OUTFILE"
+
+lines="$(printf '%s\n' "$clip" | wc -l | awk '{print $1}')"
+chars="${#clip}"
+
+notify normal "capture-clip" "Saved to ~/.clips ($lines lines, $chars chars)"

@@ -1,3 +1,0 @@
-nvme0n1p3_crypt UUID=5d15708e-1357-4856-a7ed-570be2c8d1f9 none luks,discard,x-initrd.attach
-zfs_crypt UUID=acaafcf6-8878-4329-b280-a655f73316e3 none luks,x-initrd.attach
-

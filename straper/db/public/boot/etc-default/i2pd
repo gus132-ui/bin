@@ -1,6 +1,0 @@
-# Additional options that are passed to the Daemon.
-# see possible switches in /usr/share/doc/i2pd/configuration.md.gz
-#DAEMON_OPTS="--conf=/etc/i2pd/i2pd.conf --tunconf=/etc/i2pd/tunnels.conf --tunnelsdir=/etc/i2pd/tunnels.conf.d --pidfile=/run/i2pd/i2pd.pid --logfile=/var/log/i2pd/i2pd.log --daemon --service"
-
-# If you have problems with hunging i2pd, you can try increase this
-ulimit -n 4096

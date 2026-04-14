@@ -1,6 +1,0 @@
-#!/bin/bash
-echo "Got file: $1" >> /tmp/pdf-debug.log
-echo "File exists: $(test -f "$1" && echo yes || echo no)" >> /tmp/pdf-debug.log
-echo "File size: $(wc -c < "$1" 2>/dev/null)" >> /tmp/pdf-debug.log
-cp "$1" /tmp/mutt_pdf_$$.pdf
-zathura /tmp/mutt_pdf_$$.pdf

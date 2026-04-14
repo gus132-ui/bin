@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+OUTFILE="${OUTFILE:-$HOME/.memo}"
+DMENU="${DMENU:-dmenu}"
+PROMPT="${PROMPT:-Memo: }"
+
+[[ -r "${HOME}/.local/bin/dmenu-theming" ]] && . "${HOME}/.local/bin/dmenu-theming"
+
+notify() {
+  command -v notify-send >/dev/null 2>&1 && notify-send -u "$1" "dmenu-memo" "$2"
+}
+
+die() {
+  notify critical "$1"
+  exit 1
+}
+
+note="$(
+  printf "" \
+  | ${DMENU} -p "$PROMPT" ${lines:-} ${colors:-} ${font:-} \
+  || true
+)"
+
+if [[ -z "${note}" ]]; then
+  notify low "Cancelled (empty memo)"
+  exit 0
+fi
+
+ts="$(date '+%Y-%m-%d %H:%M')"
+{
+  printf '# %s\n' "$ts"
+  printf '%s\n' "$note"
+  printf -- '---\n'
+} >> "$OUTFILE" || die "Failed to write to $OUTFILE"
+
+notify normal "Saved to ~/.memo"

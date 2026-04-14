@@ -1,9 +1,0 @@
-Version 1.22.0
-
-Configure line: --build=x86_64-linux-gnu --prefix=/usr --includedir=${prefix}/include --mandir=${prefix}/share/man --infodir=${prefix}/share/info --sysconfdir=/etc --localstatedir=/var --disable-option-checking --disable-silent-rules --libdir=${prefix}/lib/x86_64-linux-gnu --runstatedir=/run --disable-maintainer-mode --disable-dependency-tracking --with-pythonmodule --with-pyunbound --enable-subnet --enable-dnstap --enable-systemd --enable-cachedb --with-libhiredis --with-libnghttp2 --with-chroot-dir= --with-dnstap-socket-path=/run/dnstap.sock --disable-rpath --with-pidfile=/run/unbound.pid --with-libevent --enable-tfo-client --with-rootkey-file=/usr/share/dns/root.key --enable-tfo-server
-Linked libs: libevent 2.1.12-stable (it uses epoll), OpenSSL 3.5.5 27 Jan 2026
-Linked modules: dns64 python cachedb subnetcache respip validator iterator
-TCP Fastopen feature available
-
-BSD licensed, see LICENSE in source package for details.
-Report bugs to unbound-bugs@nlnetlabs.nl or https://github.com/NLnetLabs/unbound/issues

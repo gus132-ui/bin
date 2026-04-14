@@ -1,4 +1,0 @@
-/srv/gemini-capsule
-/srv/gemini-capsule/about.gmi
-/srv/gemini-capsule/index.gmi
-/srv/gemini-capsule/links.gmi

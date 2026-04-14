@@ -1,3 +1,0 @@
-[Definition]
-failregex = ^.*sshd-session\[[0-9]+\]: Connection closed by authenticating user .* \[preauth\]$
-ignoreregex =
